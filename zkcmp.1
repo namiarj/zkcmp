@@ -1,0 +1,208 @@
+.Dd September 1, 2026
+.Dt ZKCMP 1
+.Os
+.Sh NAME
+.Nm zkcmp
+.Nd zero-knowledge file comparison utility
+.Sh SYNOPSIS
+.Nm
+.Cm commit
+.Op Fl h
+.Op Fl H Ar hash
+.Ar file
+.Pp
+.Nm
+.Cm prove
+.Op Fl h
+.Op Fl H Ar hash
+.Ar file
+.Pp
+.Nm
+.Cm verify
+.Op Fl hs
+.Op Fl H Ar hash
+.Ar commit
+.Ar proof
+.Pp
+.Nm
+.Cm check
+.Op Fl hs
+.Op Fl H Ar hash
+.Ar file
+.Ar proof
+.Sh DESCRIPTION
+The
+.Nm
+utility provides zero-knowledge comparison and proof operations for files.
+It allows a prover to demonstrate that a file matches a commitment without
+revealing the file's cryptographic hash.
+
+The
+.Nm
+utility provides four subcommands:
+.Cm commit ,
+.Cm prove ,
+.Cm verify ,
+and
+.Cm check .
+The
+.Cm commit
+and
+.Cm prove
+commands operate on a file and produce a commitment or proof on standard
+output.
+The
+.Cm verify
+command verifies a proof against a public commitment.
+The
+.Cm check
+command verifies a proof against the corresponding file.
+
+.Sh OPTIONS
+The following options are available to
+.Cm commit
+and
+.Cm prove :
+
+.Bl -tag -width Ds
+.It Fl h
+Do not follow symbolic links.
+
+.It Fl H Ar hash
+Select the hash algorithm.
+Supported values are:
+.Bl -tag -width Ds
+.It Ar sha256
+SHA-256. This is the default.
+.It Ar sha3-256
+SHA3-256.
+.It Ar blake2s-256
+BLAKE2s-256.
+.El
+
+The same hash algorithm must be selected when generating and checking
+cryptographic values.
+.El
+
+The following additional option is available to
+.Cm verify
+and
+.Cm check :
+
+.Bl -tag -width Ds
+.It Fl s
+Print nothing when verification fails; return exit status only.
+.El
+
+.Sh SUBCOMMANDS
+.Bl -tag -width "Cm verify"
+.It Cm commit Ar file
+Hash
+.Ar file
+and generate a Base64-encoded public commitment.
+
+.It Cm prove Ar file
+Generate a Base64-encoded zero-knowledge proof for
+.Ar file .
+
+.It Cm verify Ar commit Ar proof
+Verify a zero-knowledge proof against a public commitment.
+
+The
+.Ar commit
+and
+.Ar proof
+arguments may be provided as literal parameters, file paths, or
+.Cm -
+to read the parameter from standard input.
+
+.It Cm check Ar file Ar proof
+Hash
+.Ar file
+and verify the proof supplied in
+.Ar proof .
+
+The
+.Ar proof
+argument may be provided as a literal parameter, a file path, or
+.Cm -
+to read the proof from standard input.
+.El
+
+.Sh PROTOCOL
+The zero-knowledge protocol is based on a Schnorr-style proof using the
+3072-bit Modular Exponentiation Group defined by RFC 3526.
+
+The file is hashed using the selected hash algorithm.
+The resulting digest is used to derive the secret value for the proof.
+The proof uses a Fiat-Shamir challenge to provide a non-interactive
+verification protocol.
+
+.Sh EXAMPLES
+Generate a commitment for a file:
+
+.Bd -literal -offset indent
+$ zkcmp commit file > commit
+.Ed
+
+Generate a proof for a file:
+
+.Bd -literal -offset indent
+$ zkcmp prove file > proof
+.Ed
+
+Verify a commitment and proof:
+
+.Bd -literal -offset indent
+$ zkcmp verify commit proof
+.Ed
+
+Generate and verify a proof through a Unix pipeline:
+
+.Bd -literal -offset indent
+$ zkcmp prove file | zkcmp check file -
+.Ed
+
+Generate a proof locally and verify it on a remote system:
+
+.Bd -literal -offset indent
+$ zkcmp prove file | ssh host 'zkcmp check file -'
+.Ed
+
+Generate a commitment and proof once and allow multiple parties to verify
+them independently:
+
+.Bd -literal -offset indent
+$ zkcmp commit file > commit
+$ zkcmp prove file > proof
+$ zkcmp verify commit proof
+$ ssh host1 'zkcmp verify commit proof'
+$ ssh host2 'zkcmp verify commit proof'
+.Ed
+
+Use SHA3-256 when generating a proof:
+
+.Bd -literal -offset indent
+$ zkcmp prove -H sha3-256 file
+.Ed
+
+.Sh EXIT STATUS
+.Ex
+.Bl -tag -width Ds
+.It 0
+The operation completed or the proof verified successfully.
+
+.It 1
+The proof did not match.
+
+.It 2
+An operational error occurred.
+.El
+
+.Sh SEE ALSO
+.Xr cmp 1 ,
+.Xr diff 1 ,
+.Xr ssh 1
+.Sh AUTHORS
+.An Nami Arjmandi
+.El
