@@ -38,7 +38,8 @@ usage(void)
     fprintf(stderr,
         "usage: zkcmp commit [-h] [-H sha256|sha3-256|blake2s-256] file\n"
         "       zkcmp prove [-h] [-H sha256|sha3-256|blake2s-256] file\n"
-        "       zkcmp verify [-hs] [-H sha256|sha3-256|blake2s-256] commit proof\n");
+        "       zkcmp verify [-hs] [-H sha256|sha3-256|blake2s-256] commit proof\n"
+        "       zkcmp check [-hs] [-H sha256|sha3-256|blake2s-256] file proof\n");
     exit(ERR_EXIT);
 }
 
