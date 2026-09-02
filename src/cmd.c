@@ -18,7 +18,7 @@ cmd_commit(struct zkcmp *z, int argc, char **argv)
     char *encoded;
 
     if (argc != 1)
-	usage();
+        usage();
     setup_group(z);
     if (hash_path(argv[0], digest, z) != 0)
         err(ERR_EXIT, "failed to hash %s", argv[0]);
