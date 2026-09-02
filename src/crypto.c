@@ -213,7 +213,7 @@ gen_commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], unsigned cha
     x = BN_bin2bn(digest, DIGEST_LEN, NULL);
     y = BN_new();
     if (x == NULL || y == NULL) {
-        BN_free(x);
+        BN_clear_free(x);
         BN_free(y);
         return (-1);
     }
@@ -223,7 +223,7 @@ gen_commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], unsigned cha
     if (ok == 1)
         if (bn_fixed(y, commit, GROUP_LEN) != 0)
             ok = 0;
-    BN_free(x);
+    BN_clear_free(x);
     BN_free(y);
     return (ok == 1 ? 0 : -1);
 }
@@ -285,8 +285,8 @@ gen_proof(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], const unsigne
         goto out;
     ok = 0;
 out:
-    BN_free(x);
-    BN_free(k);
+    BN_clear_free(x);
+    BN_clear_free(k);
     BN_free(r);
     BN_free(c);
     BN_free(cx);
