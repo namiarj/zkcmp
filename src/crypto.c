@@ -62,23 +62,6 @@ free_group(struct zkcmp *z)
     BN_CTX_free(z->ctx);
 }
 
-/*
- * Encode a big number as bytes, big endian.
- */
-int
-bn_fixed(const BIGNUM *bn, unsigned char *dst, size_t len)
-{
-    size_t n;
-
-    n = (size_t)BN_num_bytes(bn);
-    if (n > len)
-        return (-1);
-    memset(dst, 0, len);
-    if (n != 0)
-        BN_bn2bin(bn, dst + len - n);
-    return (0);
-}
-
 char *
 b64_encode(const unsigned char *src, size_t len)
 {
@@ -120,6 +103,23 @@ b64_decode(const char *src, unsigned char *dst, size_t dstlen)
         return (-1);
     memcpy(dst, tmp, (size_t)r);
     return (r);
+}
+
+/*
+ * Encode a big number as bytes, big endian.
+ */
+int
+bn_fixed(const BIGNUM *bn, unsigned char *dst, size_t len)
+{
+    size_t n;
+
+    n = (size_t)BN_num_bytes(bn);
+    if (n > len)
+        return (-1);
+    memset(dst, 0, len);
+    if (n != 0)
+        BN_bn2bin(bn, dst + len - n);
+    return (0);
 }
 
 int
@@ -184,6 +184,36 @@ hash_path(const char *path, unsigned char digest[DIGEST_LEN], struct zkcmp *z)
     return (result);
 }
 
+
+/*
+ * x = digest mod q
+ * Y = g^x
+ */
+int
+commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], unsigned char commitment[COMMIT_LEN])
+{
+    BIGNUM *x;
+    BIGNUM *y;
+    int ok;
+
+    x = BN_bin2bn(digest, DIGEST_LEN, NULL);
+    y = BN_new();
+    if (x == NULL || y == NULL) {
+        BN_clear_free(x);
+        BN_free(y);
+        return (-1);
+    }
+    ok = BN_mod(x, x, z->q, z->ctx);
+    if (ok == 1)
+        ok = BN_mod_exp(y, z->g, x, z->p, z->ctx);
+    if (ok == 1)
+        if (bn_fixed(y, commitment, GROUP_LEN) != 0)
+            ok = 0;
+    BN_clear_free(x);
+    BN_free(y);
+    return (ok == 1 ? 0 : -1);
+}
+
 /*
  * c = H(Y || R) mod q
  */
@@ -219,39 +249,10 @@ fail:
 }
 
 /*
- * x = digest mod q
- * Y = g^x
- */
-int
-gen_commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], unsigned char commit[COMMIT_LEN])
-{
-    BIGNUM *x;
-    BIGNUM *y;
-    int ok;
-
-    x = BN_bin2bn(digest, DIGEST_LEN, NULL);
-    y = BN_new();
-    if (x == NULL || y == NULL) {
-        BN_clear_free(x);
-        BN_free(y);
-        return (-1);
-    }
-    ok = BN_mod(x, x, z->q, z->ctx);
-    if (ok == 1)
-        ok = BN_mod_exp(y, z->g, x, z->p, z->ctx);
-    if (ok == 1)
-        if (bn_fixed(y, commit, GROUP_LEN) != 0)
-            ok = 0;
-    BN_clear_free(x);
-    BN_free(y);
-    return (ok == 1 ? 0 : -1);
-}
-
-/*
  * Schnorr proof
  */
 int
-gen_proof(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], const unsigned char commit[COMMIT_LEN], unsigned char proof[PROOF_LEN])
+prove(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], const unsigned char commitment[COMMIT_LEN], unsigned char proof[PROOF_LEN])
 {
     BIGNUM *x;
     BIGNUM *k;
@@ -290,7 +291,7 @@ gen_proof(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], const unsigne
     /*
      * c = H(Y || R) mod q
      */
-    if (challenge(z, commit, rbuf, c) != 0)
+    if (challenge(z, commitment, rbuf, c) != 0)
         goto out;
     /*
      * z = k + c*x mod q
@@ -317,7 +318,7 @@ out:
  * g^z == R * Y^c mod p
  */
 int
-verify(struct zkcmp *z, const unsigned char commit[COMMIT_LEN], const unsigned char proof[PROOF_LEN])
+verify(struct zkcmp *z, const unsigned char commitment[COMMIT_LEN], const unsigned char proof[PROOF_LEN])
 {
     BIGNUM *y;
     BIGNUM *r;
@@ -328,7 +329,7 @@ verify(struct zkcmp *z, const unsigned char commit[COMMIT_LEN], const unsigned c
     BIGNUM *rhs;
     int valid = 0;
 
-    y  = BN_bin2bn(commit, GROUP_LEN, NULL);
+    y  = BN_bin2bn(commitment, GROUP_LEN, NULL);
     r  = BN_bin2bn(proof, GROUP_LEN, NULL);
     zz = BN_bin2bn(proof + GROUP_LEN, GROUP_LEN, NULL);
     c   = BN_new();
@@ -349,7 +350,7 @@ verify(struct zkcmp *z, const unsigned char commit[COMMIT_LEN], const unsigned c
     /*
      * c = H(Y || R)
      */
-    if (challenge(z, commit, proof, c) != 0)
+    if (challenge(z, commitment, proof, c) != 0)
         goto out;
     /*
      * lhs = g^z
