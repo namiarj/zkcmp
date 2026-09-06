@@ -164,7 +164,6 @@ hash_path(const char *path, unsigned char digest[DIGEST_LEN], struct zkcmp *z)
 
     if (strcmp(path, "-") == 0)
         return (hash_stream(stdin, digest, z));
-
     if (z->nofollow) {
         fd = open(path, O_RDONLY | O_NOFOLLOW);
         if (fd == -1)
