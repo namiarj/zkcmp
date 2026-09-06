@@ -45,7 +45,7 @@ The default hash is SHA-256. SHA3-256 or BLAKE2s-256 can also be selected.
 ```text
 zkcmp commit file
 zkcmp prove file
-zkcmp verify commit proof
+zkcmp verify commitment proof
 zkcmp check file proof
 ```
 
@@ -54,7 +54,7 @@ zkcmp check file proof
 Creates a reusable public commitment from a file.
 
 ```sh
-zkcmp commit release.tar > commit
+zkcmp commit release.tar > commitment
 ```
 
 A commitment can be published once and used as the public statement for multiple independent proofs.
@@ -72,7 +72,7 @@ zkcmp prove release.tar > proof
 Verifies a proof against a previously created commitment.
 
 ```sh
-zkcmp verify commit proof
+zkcmp verify commitment proof
 ```
 
 This is useful when a commitment has been published and multiple parties need to demonstrate knowledge of the corresponding secret.
@@ -80,7 +80,7 @@ This is useful when a commitment has been published and multiple parties need to
 For example:
 
 ```sh
-server$ zkcmp commit release.tar > commit
+server$ zkcmp commit release.tar > commitment
 
 alice$ zkcmp prove release.tar > alice.proof
 bob$   zkcmp prove release.tar > bob.proof
