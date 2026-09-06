@@ -36,6 +36,8 @@ The current implementation uses a Schnorr-style proof of knowledge over a 3072-b
 
 The default hash is SHA-256. SHA3-256 or BLAKE2s-256 can also be selected.
 
+[Read more about Schnorr proof.](https://www.zkdocs.com/docs/zkdocs/zero-knowledge-protocols/schnorr/)
+
 ## Commands
 
 `zkcmp` provides four operations:
