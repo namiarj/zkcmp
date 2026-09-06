@@ -1,24 +1,3 @@
-/*
- * zkcmp - zero-knowledge file comparison utility
- *
- * Zero-knowledge Schnorr protocol:
- *
- * Secret:
- *    x = hash(file) mod q
- *
- * Commit:
- *    Y = g^x mod p
- *
- * Proof:
- *    k <- random Zq
- *    R = g^k
- *    c = H(Y || R) mod q
- *    z = k + c*x mod q
- *
- * Verification:
- *    g^z == R * Y^c mod p
- */
-
 #include <err.h>
 #include <fcntl.h>
 #include <stdio.h>
