@@ -2,7 +2,7 @@
 #define DIFF_EXIT   1
 #define ERR_EXIT    2
 
-/* RFC 3526 / 3072-bit MODP group size. */
+/* 3072-bit MODP group size. */
 #define GROUP_LEN   384
 #define DIGEST_LEN  32
 #define COMMIT_LEN  (GROUP_LEN)
@@ -20,6 +20,7 @@ struct zkcmp {
     int nofollow;
 };
 
+/* RFC 3526 / 3072-bit MODP group. */
 static const char *prime_hex =
     "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74"
     "020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F1437"
