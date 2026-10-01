@@ -15,10 +15,10 @@ void
 usage(void)
 {
     fprintf(stderr,
-        "usage: zkcmp commit [-h] [-H sha256|sha3-256|blake2s-256] file\n"
-        "       zkcmp prove [-h] [-H sha256|sha3-256|blake2s-256] file\n"
-        "       zkcmp verify [-hs] [-H sha256|sha3-256|blake2s-256] commit proof\n"
-        "       zkcmp check [-hs] [-H sha256|sha3-256|blake2s-256] file proof\n");
+        "usage: zkcmp commit [-h] [-H sha256|sha3-256|sha512-256] file\n"
+        "       zkcmp prove [-h] [-H sha256|sha3-256|sha512-256] file\n"
+        "       zkcmp verify [-hs] [-H sha256|sha3-256|sha512-256] commit proof\n"
+        "       zkcmp check [-hs] [-H sha256|sha3-256|sha512-256] file proof\n");
     exit(ERR_EXIT);
 }
 
@@ -52,9 +52,6 @@ load_param(const char *arg, char *buf, size_t len)
     return (0);
 }
 
-/* 
- * Main
- */
 int
 main(int argc, char **argv)
 {
@@ -62,6 +59,10 @@ main(int argc, char **argv)
     const char *cmd;
     const char *optstr;
     int ch;
+
+#ifdef __OpenBSD__
+    pledge("stdio rpath", NULL);
+#endif
 
     if (argc < 2)
         usage();
@@ -85,8 +86,8 @@ main(int argc, char **argv)
         case 'H':
             if (strcmp(optarg, "sha3-256") == 0)
                 z.md = EVP_sha3_256();
-            else if (strcmp(optarg, "blake2s-256") == 0)
-                z.md = EVP_blake2s256();
+            else if (strcmp(optarg, "sha512-256") == 0)
+                z.md = EVP_sha512_256();
             else if (strcmp(optarg, "sha256") != 0)
                 usage();
             break;
