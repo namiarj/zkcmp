@@ -34,7 +34,7 @@ The proof is constructed so that the secret itself does not need to be transmitt
 
 The current implementation uses a Schnorr-style proof of knowledge over a 3072-bit MODP group.
 
-The default hash is SHA-256. SHA3-256 or BLAKE2s-256 can also be selected.
+The default hash is SHA-256. SHA3-256 or SHA512-256 can also be selected.
 
 [Read more about Schnorr proof.](https://www.zkdocs.com/docs/zkdocs/zero-knowledge-protocols/schnorr/)
 
