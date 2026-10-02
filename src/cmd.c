@@ -13,24 +13,27 @@
 int
 cmd_commit(struct zkcmp *z, int argc, char **argv)
 {
-    unsigned char digest[DIGEST_LEN];
-    unsigned char commitment[GROUP_LEN];
-    char *encoded;
+	unsigned char digest[DIGEST_LEN];
+	unsigned char commitment[GROUP_LEN];
+	char *encoded;
 
-    if (argc != 1)
-        usage();
-    setup_group(z);
-    if (hash_path(argv[0], digest, z) != 0)
-        err(ERR_EXIT, "failed to hash %s", argv[0]);
-    if (commit(z, digest, commitment) != 0)
-        errx(ERR_EXIT, "commitment generation failed");
-    free_group(z);
-    encoded = b64_encode(commitment, sizeof(commitment));
-    if (encoded == NULL)
-        errx(ERR_EXIT, "base64 encoding failed");
-    puts(encoded);
-    free(encoded);
-    return OK_EXIT;
+	if (argc != 1)
+		usage();
+
+	setup_group(z);
+	if (hash_path(argv[0], digest, z) != 0)
+		err(ERR_EXIT, "failed to hash %s", argv[0]);
+	if (commit(z, digest, commitment) != 0)
+		errx(ERR_EXIT, "commitment generation failed");
+	free_group(z);
+
+	encoded = b64_encode(commitment, sizeof(commitment));
+	if (encoded == NULL)
+		errx(ERR_EXIT, "base64 encoding failed");
+	puts(encoded);
+	free(encoded);
+
+	return OK_EXIT;
 }
 
 /*
@@ -39,27 +42,30 @@ cmd_commit(struct zkcmp *z, int argc, char **argv)
 int
 cmd_prove(struct zkcmp *z, int argc, char **argv)
 {
-    unsigned char digest[DIGEST_LEN];
-    unsigned char commitment[GROUP_LEN];
-    unsigned char proof[GROUP_LEN * 2];
-    char *encoded;
+	unsigned char digest[DIGEST_LEN];
+	unsigned char commitment[GROUP_LEN];
+	unsigned char proof[GROUP_LEN * 2];
+	char *encoded;
 
-    if (argc != 1)
-        usage();
-    setup_group(z);
-    if (hash_path(argv[0], digest, z) != 0)
-        err(ERR_EXIT, "%s", argv[0]);
-    if (commit(z, digest, commitment) != 0)
-        errx(ERR_EXIT, "commitment generation failed");
-    if (prove(z, digest, commitment, proof) != 0)
-        errx(ERR_EXIT, "proof generation failed");
-    free_group(z);
-    encoded = b64_encode(proof, sizeof(proof));
-    if (encoded == NULL)
-        errx(ERR_EXIT, "base64 encoding failed");
-    puts(encoded);
-    free(encoded);
-    return OK_EXIT;
+	if (argc != 1)
+		usage();
+
+	setup_group(z);
+	if (hash_path(argv[0], digest, z) != 0)
+		err(ERR_EXIT, "%s", argv[0]);
+	if (commit(z, digest, commitment) != 0)
+		errx(ERR_EXIT, "commitment generation failed");
+	if (prove(z, digest, commitment, proof) != 0)
+		errx(ERR_EXIT, "proof generation failed");
+	free_group(z);
+
+	encoded = b64_encode(proof, sizeof(proof));
+	if (encoded == NULL)
+		errx(ERR_EXIT, "base64 encoding failed");
+	puts(encoded);
+	free(encoded);
+
+	return OK_EXIT;
 }
 
 /*
@@ -68,53 +74,31 @@ cmd_prove(struct zkcmp *z, int argc, char **argv)
 int
 cmd_verify(struct zkcmp *z, int argc, char **argv)
 {
-    unsigned char commitment[GROUP_LEN];
-    unsigned char proof[GROUP_LEN * 2];
-    char commitment_buf[B64_LEN];
-    char proof_buf[B64_LEN];
-    int status;
+	unsigned char commitment[GROUP_LEN];
+	unsigned char proof[GROUP_LEN * 2];
+	char commitment_buf[B64_LEN];
+	char proof_buf[B64_LEN];
+	int status;
 
-    if (argc != 2)
-        usage();
-    setup_group(z);
-    load_param(argv[0], commitment_buf, sizeof(commitment_buf));
-    if (b64_decode(commitment_buf, commitment, sizeof(commitment)) != GROUP_LEN)
-        errx(ERR_EXIT, "invalid commitment");
-    load_param(argv[1], proof_buf, sizeof(proof_buf));
-    if (b64_decode(proof_buf, proof, sizeof(proof)) != GROUP_LEN * 2)
-        errx(ERR_EXIT, "invalid proof");
-    status = verify(z, commitment, proof) ? OK_EXIT : DIFF_EXIT;
-    free_group(z);
-    if (status == DIFF_EXIT && !z->silent)
-        warnx("commitment and proof mismatched");
-    return status;
-}
+	if (argc != 2)
+		usage();
 
-/*
- * zkcmp check file proof
- */
-int
-cmd_check(struct zkcmp *z, int argc, char **argv)
-{
-    unsigned char digest[DIGEST_LEN];
-    unsigned char commitment[GROUP_LEN];
-    unsigned char proof[GROUP_LEN * 2];
-    char proof_buf[B64_LEN];
-    int status;
+	setup_group(z);
 
-    if (argc != 2)
-        usage();
-    setup_group(z);
-    if (hash_path(argv[0], digest, z) != 0)
-        err(ERR_EXIT, "failed to hash %s", argv[0]);
-    if (commit(z, digest, commitment) != 0)
-        errx(ERR_EXIT, "commitment generation failed");
-    load_param(argv[1], proof_buf, sizeof(proof_buf));
-    if (b64_decode(proof_buf, proof, sizeof(proof)) != GROUP_LEN * 2)
-        errx(ERR_EXIT, "invalid proof");
-    status = verify(z, commitment, proof) ? OK_EXIT : DIFF_EXIT;
-    free_group(z);
-    if (status == DIFF_EXIT && !z->silent)
-        warnx("file and proof mismatched");
-    return status;
+	load_param(argv[0], commitment_buf, sizeof(commitment_buf));
+	if (b64_decode(commitment_buf, commitment,
+	    sizeof(commitment)) != GROUP_LEN)
+		errx(ERR_EXIT, "invalid commitment");
+
+	load_param(argv[1], proof_buf, sizeof(proof_buf));
+	if (b64_decode(proof_buf, proof, sizeof(proof)) != GROUP_LEN * 2)
+		errx(ERR_EXIT, "invalid proof");
+
+	status = verify(z, commitment, proof) ? OK_EXIT : DIFF_EXIT;
+	free_group(z);
+
+	if (status == DIFF_EXIT && !z->silent)
+		warnx("commitment and proof mismatched");
+
+	return status;
 }
