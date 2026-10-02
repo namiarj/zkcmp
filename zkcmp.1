@@ -1,4 +1,4 @@
-.Dd October 1, 2026
+.Dd October 2, 2026
 .Dt ZKCMP 1
 .Os
 .Sh NAME
@@ -24,12 +24,6 @@
 .Ar commit
 .Ar proof
 .Pp
-.Nm
-.Cm check
-.Op Fl hs
-.Op Fl H Ar hash
-.Ar file
-.Ar proof
 .Sh DESCRIPTION
 The
 .Nm
@@ -39,12 +33,11 @@ revealing the file's cryptographic hash.
 
 The
 .Nm
-utility provides four subcommands:
+utility provides three subcommands:
 .Cm commit ,
 .Cm prove ,
-.Cm verify ,
 and
-.Cm check .
+.Cm verify .
 The
 .Cm commit
 and
@@ -54,9 +47,6 @@ output.
 The
 .Cm verify
 command verifies a proof against a public commitment.
-The
-.Cm check
-command verifies a proof against the corresponding file.
 
 .Sh OPTIONS
 The following options are available to
@@ -80,14 +70,12 @@ SHA3-256.
 SHA512-256.
 .El
 
-The same hash algorithm must be selected when generating and checking
+The same hash algorithm must be selected when generating and verifying
 cryptographic values.
 .El
 
 The following additional option is available to
-.Cm verify
-and
-.Cm check :
+.Cm verify :
 
 .Bl -tag -width Ds
 .It Fl s
@@ -116,7 +104,6 @@ arguments may be provided as literal parameters, file paths, or
 .Cm -
 to read the parameter from standard input.
 
-.It Cm check Ar file Ar proof
 Hash
 .Ar file
 and verify the proof supplied in
@@ -155,18 +142,6 @@ Verify a commitment and proof:
 
 .Bd -literal -offset indent
 $ zkcmp verify commit proof
-.Ed
-
-Generate and verify a proof through a Unix pipeline:
-
-.Bd -literal -offset indent
-$ zkcmp prove file | zkcmp check file -
-.Ed
-
-Generate a proof locally and verify it on a remote system:
-
-.Bd -literal -offset indent
-$ zkcmp prove file | ssh host 'zkcmp check file -'
 .Ed
 
 Generate a commitment and proof once and allow multiple parties to verify
