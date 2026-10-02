@@ -19,7 +19,6 @@ int
 main(int argc, char **argv)
 {
 	struct zkcmp z = {.md = EVP_sha256()};
-	const char *cmd;
 	int ch;
 
 #ifdef __OpenBSD__
@@ -29,7 +28,7 @@ main(int argc, char **argv)
 	if (argc < 2)
 		usage();
 
-	cmd = argv[1];
+	const char *cmd = argv[1];
 
 	argc--;
 	argv++;
@@ -43,15 +42,23 @@ main(int argc, char **argv)
 			z.silent = 1;
 			break;
 		case 'H':
-			if (strcmp(optarg, "sha3-256") == 0)
+			switch (optarg[3]) {
+			case '3':
+				if (strcmp(optarg, "sha3-256"))
+					usage();
 				z.md = EVP_sha3_256();
-			else if (strcmp(optarg, "sha512-256") == 0)
+				break;
+			case '5':
+				if (strcmp(optarg, "sha512-256"))
+					usage();
 				z.md = EVP_sha512_256();
-			else if (strcmp(optarg, "sha256") != 0)
+				break;
+			case '2':
+				if (strcmp(optarg, "sha256") == 0)
+					break;
+			default:
 				usage();
-			break;
-		default:
-			usage();
+			}
 		}
 	}
 
