@@ -46,4 +46,3 @@ int verify(struct zkcmp*, const unsigned char*, const unsigned char*);
 int cmd_commit(struct zkcmp*, int, char**);
 int cmd_prove(struct zkcmp*, int, char**);
 int cmd_verify(struct zkcmp*, int, char**);
-int cmd_check(struct zkcmp*, int, char**);
