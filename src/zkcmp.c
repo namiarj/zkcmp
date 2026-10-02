@@ -19,6 +19,7 @@ int
 main(int argc, char **argv)
 {
 	struct zkcmp z = {.md = EVP_sha256()};
+	const char *cmd;
 	int ch;
 
 #ifdef __OpenBSD__
@@ -28,7 +29,7 @@ main(int argc, char **argv)
 	if (argc < 2)
 		usage();
 
-	const char *cmd = argv[1];
+	cmd = argv[1];
 
 	argc--;
 	argv++;
