@@ -3,8 +3,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <openssl/evp.h>
-
 #include "zkcmp.h"
 
 void
