@@ -5,8 +5,6 @@
 /* 3072-bit MODP group size. */
 #define GROUP_LEN   384
 #define DIGEST_LEN  32
-#define COMMIT_LEN  (GROUP_LEN)
-#define PROOF_LEN   (GROUP_LEN + GROUP_LEN)
 #define IO_BUF_LEN  16384
 #define B64_LEN     8192
 
@@ -38,7 +36,6 @@ static const char *prime_hex =
 void usage(void);
 void setup_group(struct zkcmp*);
 void free_group(struct zkcmp*);
-int bn_fixed(const BIGNUM*, unsigned char*, size_t);
 char *b64_encode(const unsigned char*, size_t);
 int b64_decode(const char*, unsigned char*, size_t);
 int load_param(const char*, char*, size_t);
