@@ -1,11 +1,42 @@
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <openssl/bn.h>
-#include <openssl/evp.h>
+#include <string.h>
 
 #include "zkcmp.h"
+
+static int
+load_param(const char *arg, char *buf, size_t len)
+{
+	FILE *fp;
+	size_t n;
+
+	if (strcmp(arg, "-") == 0)
+		fp = stdin;
+	else {
+		fp = fopen(arg, "r");
+		if (!fp) {
+			if (strlcpy(buf, arg, len) >= len)
+				return -1;
+			return 0;
+		}
+	}
+
+	if (!fgets(buf, len, fp)) {
+		if (fp != stdin)
+			fclose(fp);
+		return -1;
+	}
+
+	if (fp != stdin)
+		fclose(fp);
+
+	n = strlen(buf);
+	if (n > 0 && buf[n - 1] == '\n')
+		buf[n - 1] = '\0';
+
+	return 0;
+}
 
 /*
  * zkcmp commit file
