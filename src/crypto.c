@@ -70,14 +70,14 @@ b64_encode(const unsigned char *src, size_t len)
 
     dst = malloc(4 * ((len + 2) / 3) + 1);
     if (dst == NULL)
-        return (NULL);
+        return NULL;
     n = EVP_EncodeBlock((unsigned char *)dst, src, (int)len);
     if (n < 0) {
         free(dst);
-        return (NULL);
+        return NULL;
     }
     dst[n] = '\0';
-    return (dst);
+    return dst;
 }
 
 int
@@ -89,37 +89,37 @@ b64_decode(const char *src, unsigned char *dst, size_t dstlen)
 
     n = strlen(src);
     if (n == 0 || (n & 3) != 0)
-        return (-1);
+        return -1;
     if (n >= B64_LEN)
-        return (-1);
+        return -1;
     r = EVP_DecodeBlock(tmp, (const unsigned char *)src, (int)n);
     if (r < 0)
-        return (-1);
+        return -1;
     if (n >= 1 && src[n - 1] == '=')
         r--;
     if (n >= 2 && src[n - 2] == '=')
         r--;
     if ((size_t)r > dstlen)
-        return (-1);
+        return -1;
     memcpy(dst, tmp, (size_t)r);
-    return (r);
+    return r;
 }
 
 /*
  * Encode a big number as bytes, big endian.
  */
-int
+static int
 bn_fixed(const BIGNUM *bn, unsigned char *dst, size_t len)
 {
     size_t n;
 
     n = (size_t)BN_num_bytes(bn);
     if (n > len)
-        return (-1);
+        return -1;
     memset(dst, 0, len);
     if (n != 0)
         BN_bn2bin(bn, dst + len - n);
-    return (0);
+    return 0;
 }
 
 int
@@ -132,27 +132,27 @@ hash_stream(FILE *fp, unsigned char digest[DIGEST_LEN], struct zkcmp *z)
 
     md = EVP_MD_CTX_new();
     if (md == NULL)
-        return (-1);
+        return -1;
     if (EVP_DigestInit_ex(md, z->md, NULL) != 1) {
         EVP_MD_CTX_free(md);
-        return (-1);
+        return -1;
     }
     while ((n = fread(buf, 1, sizeof(buf), fp)) != 0) {
         if (EVP_DigestUpdate(md, buf, n) != 1) {
             EVP_MD_CTX_free(md);
-            return (-1);
+            return -1;
         }
     }
     if (ferror(fp)) {
         EVP_MD_CTX_free(md);
-        return (-1);
+        return -1;
     }
     if (EVP_DigestFinal_ex(md, digest, &digest_len) != 1 || digest_len != DIGEST_LEN) {
         EVP_MD_CTX_free(md);
-        return (-1);
+        return -1;
     }
     EVP_MD_CTX_free(md);
-    return (0);
+    return 0;
 }
 
 int
@@ -163,24 +163,24 @@ hash_path(const char *path, unsigned char digest[DIGEST_LEN], struct zkcmp *z)
     int result;
 
     if (strcmp(path, "-") == 0)
-        return (hash_stream(stdin, digest, z));
+        return hash_stream(stdin, digest, z);
     if (z->nofollow) {
         fd = open(path, O_RDONLY | O_NOFOLLOW);
         if (fd == -1)
-            return (-1);
+            return -1;
         fp = fdopen(fd, "rb");
         if (fp == NULL) {
             close(fd);
-            return (-1);
+            return -1;
         }
     } else {
         fp = fopen(path, "rb");
         if (fp == NULL)
-            return (-1);
+            return -1;
     }
     result = hash_stream(fp, digest, z);
     fclose(fp);
-    return (result);
+    return result;
 }
 
 
@@ -189,7 +189,7 @@ hash_path(const char *path, unsigned char digest[DIGEST_LEN], struct zkcmp *z)
  * Y = g^x
  */
 int
-commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], unsigned char commitment[COMMIT_LEN])
+commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], unsigned char commitment[GROUP_LEN])
 {
     BIGNUM *x;
     BIGNUM *y;
@@ -200,7 +200,7 @@ commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], unsigned char co
     if (x == NULL || y == NULL) {
         BN_clear_free(x);
         BN_free(y);
-        return (-1);
+        return -1;
     }
     ok = BN_mod(x, x, z->q, z->ctx);
     if (ok == 1)
@@ -210,7 +210,7 @@ commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], unsigned char co
             ok = 0;
     BN_clear_free(x);
     BN_free(y);
-    return (ok == 1 ? 0 : -1);
+    return ok == 1 ? 0 : -1;
 }
 
 /*
@@ -225,7 +225,7 @@ challenge(struct zkcmp *z, const unsigned char *y, const unsigned char *r, BIGNU
 
     md = EVP_MD_CTX_new();
     if (md == NULL)
-        return (-1);
+        return -1;
     if (EVP_DigestInit_ex(md, z->md, NULL) != 1)
         goto fail;
     if (EVP_DigestUpdate(md, y, GROUP_LEN) != 1)
@@ -241,17 +241,17 @@ challenge(struct zkcmp *z, const unsigned char *y, const unsigned char *r, BIGNU
     if (BN_mod(c, c, z->q, z->ctx) != 1)
         goto fail;
     EVP_MD_CTX_free(md);
-    return (0);
+    return 0;
 fail:
     EVP_MD_CTX_free(md);
-    return (-1);
+    return -1;
 }
 
 /*
  * Schnorr proof
  */
 int
-prove(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], const unsigned char commitment[COMMIT_LEN], unsigned char proof[PROOF_LEN])
+prove(struct zkcmp *z, const unsigned char digest[DIGEST_LEN], const unsigned char commitment[GROUP_LEN], unsigned char proof[GROUP_LEN * 2])
 {
     BIGNUM *x;
     BIGNUM *k;
@@ -310,14 +310,14 @@ out:
     BN_free(c);
     BN_free(cx);
     BN_free(zz);
-    return (ok);
+    return ok;
 }
 
 /*
  * g^z == R * Y^c mod p
  */
 int
-verify(struct zkcmp *z, const unsigned char commitment[COMMIT_LEN], const unsigned char proof[PROOF_LEN])
+verify(struct zkcmp *z, const unsigned char commitment[GROUP_LEN], const unsigned char proof[GROUP_LEN * 2])
 {
     BIGNUM *y;
     BIGNUM *r;
@@ -375,5 +375,5 @@ out:
     BN_free(lhs);
     BN_free(yc);
     BN_free(rhs);
-    return (valid);
+    return valid;
 }
