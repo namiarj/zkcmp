@@ -54,8 +54,9 @@ main(int argc, char **argv)
 				z.md = EVP_sha512_256();
 				break;
 			case '2':
-				if (strcmp(optarg, "sha256") == 0)
-					break;
+				if (strcmp(optarg, "sha256"))
+					usage()
+				break;
 			default:
 				usage();
 			}
