@@ -40,13 +40,12 @@ The default hash is SHA-256. SHA3-256 or SHA512-256 can also be selected.
 
 ## Commands
 
-`zkcmp` provides four operations:
+`zkcmp` provides three operations:
 
 ```text
 zkcmp commit file
 zkcmp prove file
 zkcmp verify commitment proof
-zkcmp check file proof
 ```
 
 ### `commit`
