@@ -34,22 +34,22 @@ load_param(const char *arg, char *buf, size_t len)
         fp = fopen(arg, "r");
         if (fp == NULL) {
             if (strlen(arg) >= len)
-                return (-1);
+                return -1;
             strlcpy(buf, arg, len);
-            return (0);
+            return 0;
         }
     }
     if (fgets(buf, len, fp) == NULL) {
         if (fp != stdin)
             fclose(fp);
-        return (-1);
+        return -1;
     }
     if (fp != stdin)
         fclose(fp);
     n = strlen(buf);
     if (n > 0 && buf[n - 1] == '\n')
         buf[n - 1] = '\0';
-    return (0);
+    return 0;
 }
 
 int
@@ -61,8 +61,7 @@ main(int argc, char **argv)
     int ch;
 
 #ifdef __OpenBSD__
-    if (pledge("stdio rpath", NULL) == -1)
-        err(ERR_EXIT, "pledge");
+    pledge("stdio rpath", NULL);
 #endif
 
     if (argc < 2)
@@ -102,10 +101,10 @@ main(int argc, char **argv)
     argc -= optind;
     argv += optind;
     if (strcmp(cmd, "commit") == 0)
-        return (cmd_commit(&z, argc, argv));
+        return cmd_commit(&z, argc, argv);
     if (strcmp(cmd, "prove") == 0)
-        return (cmd_prove(&z, argc, argv));
+        return cmd_prove(&z, argc, argv);
     if (strcmp(cmd, "verify") == 0)
-        return (cmd_verify(&z, argc, argv));
-    return (cmd_check(&z, argc, argv));
+        return cmd_verify(&z, argc, argv);
+    return cmd_check(&z, argc, argv);
 }
