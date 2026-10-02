@@ -24,9 +24,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <openssl/bn.h>
-#include <openssl/evp.h>
-
 #include "zkcmp.h"
 
 void
