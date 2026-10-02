@@ -89,34 +89,6 @@ server$ zkcmp verify commit alice.proof
 server$ zkcmp verify commit bob.proof
 ```
 
-### `check`
-
-Checks the supplied proof against a local file.
-
-The intended Unix/SSH workflow is:
-
-```sh
-zkcmp prove release.tar | ssh host 'zkcmp check release.tar -'
-```
-
-## Linkability
-
-The current commitment is deterministic.
-
-The same file produces the same commitment when the same hash algorithm is used.
-
-A published commitment can therefore act as a stable identifier.
-
-An observer can recognize repeated use of the same commitment and, if they possess candidate files, can test those candidates against it.
-
-Therefore:
-
-> **A `zkcmp` commitment should not be considered an unlinkable or strongly hiding commitment.**
-
-A proof can therefore provide a zero-knowledge property while the public statement to which it refers remains linkable.
-
-If a reusable public statement is not needed, the `check` workflow avoids publishing the commitment as a separate object.
-
 ## Building
 
 On FreeBSD:
