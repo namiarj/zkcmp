@@ -20,7 +20,7 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	struct zkcmp z = { .md = EVP_sha256() };
+	struct zkcmp z = {.md = EVP_sha256()};
 	const char *cmd = argv[1];
 	int ch;
 
