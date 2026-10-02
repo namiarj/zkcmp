@@ -55,7 +55,7 @@ main(int argc, char **argv)
 				break;
 			case '2':
 				if (strcmp(optarg, "sha256"))
-					usage()
+					usage();
 				break;
 			default:
 				usage();
