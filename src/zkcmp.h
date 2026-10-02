@@ -1,3 +1,6 @@
+#include <openssl/bn.h>
+#include <openssl/evp.h>
+
 #define OK_EXIT    	0
 #define DIFF_EXIT	1
 #define ERR_EXIT	2
@@ -37,7 +40,6 @@ void setup_group(struct zkcmp*);
 void free_group(struct zkcmp*);
 char *b64_encode(const unsigned char*, size_t);
 int b64_decode(const char*, unsigned char*, size_t);
-int load_param(const char*, char*, size_t);
 int hash_stream(FILE*, unsigned char*, struct zkcmp*);
 int hash_path(const char*, unsigned char*, struct zkcmp*);
 int commit(struct zkcmp*, const unsigned char*, unsigned char*);
