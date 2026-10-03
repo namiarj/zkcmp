@@ -9,9 +9,9 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: zkcmp commit [-h] [-H sha256|sha3-256|sha512-256] file\n"
-	    "       zkcmp prove [-h] [-H sha256|sha3-256|sha512-256] file\n"
-	    "       zkcmp verify [-hs] [-H sha256|sha3-256|sha512-256] commit proof\n");
+		"usage: zkcmp [-H hash] commit file\n"
+		"       zkcmp [-H hash] prove file\n"
+		"       zkcmp [-s] [-H hash] verify commit proof\n");
 	exit(ERR_EXIT);
 }
 
@@ -19,6 +19,7 @@ int
 main(int argc, char **argv)
 {
 	struct zkcmp z = {.md = EVP_sha256()};
+	char *cmd;
 	int ch;
 
 #ifdef __OpenBSD__
@@ -28,16 +29,8 @@ main(int argc, char **argv)
 	if (argc < 2)
 		usage();
 
-	const char *cmd = argv[1];
-
-	argc--;
-	argv++;
-
-	while ((ch = getopt(argc, argv, "hsH:")) != -1) {
+	while ((ch = getopt(argc, argv, "sH:")) != -1) {
 		switch (ch) {
-		case 'h':
-			z.nofollow = 1;
-			break;
 		case 's':
 			z.silent = 1;
 			break;
@@ -57,6 +50,7 @@ main(int argc, char **argv)
 					usage();
 				z.md = EVP_sha512_256();
 				break;
+			case '?':
 			default:
 				usage();
 			}
@@ -65,6 +59,7 @@ main(int argc, char **argv)
 
 	argc -= optind;
 	argv += optind;
+	cmd = argv[0];
 
 	switch (cmd[0]) {
 	case 'c':
