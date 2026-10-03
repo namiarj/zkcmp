@@ -8,7 +8,7 @@
 #define GROUP_LEN	384
 #define DIGEST_LEN	32
 #define IO_BUF_LEN	16384
-#define B64_LEN	    8192
+#define B64_LEN	8192
 
 struct zkcmp {
 	BIGNUM *p;
@@ -35,16 +35,12 @@ static const char *prime_hex =
 	"D87602733EC86A64521F2B18177B200CBBE117577A615D6C770988C0BAD946E2"
 	"08E24FA074E5AB3143DB5BFCE0FD108E4B82D120A93AD2CAFFFFFFFFFFFFFFFF";
 
-void usage(void);
 void setup_group(struct zkcmp*);
 void free_group(struct zkcmp*);
-char *b64_encode(const unsigned char*, size_t);
-int b64_decode(const char*, unsigned char*, size_t);
-int hash_stream(FILE*, unsigned char*, struct zkcmp*);
 int hash_path(const char*, unsigned char*, struct zkcmp*);
 int commit(struct zkcmp*, const unsigned char*, unsigned char*);
 int prove(struct zkcmp*, const unsigned char*, const unsigned char*, unsigned char*);
 int verify(struct zkcmp*, const unsigned char*, const unsigned char*);
-int cmd_commit(struct zkcmp*, int, char**);
-int cmd_prove(struct zkcmp*, int, char**);
-int cmd_verify(struct zkcmp*, int, char**);
+int cmd_commit(struct zkcmp*, char*);
+int cmd_prove(struct zkcmp*, char*);
+int cmd_verify(struct zkcmp*, char*, char*);
