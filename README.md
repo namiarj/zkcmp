@@ -43,9 +43,9 @@ The default hash is SHA-256. SHA3-256 or SHA512-256 can also be selected.
 `zkcmp` provides three operations:
 
 ```text
-zkcmp commit file
-zkcmp prove file
-zkcmp verify commitment proof
+zkcmp [-H sha256|sha3-256|sha512|256] commit file
+zkcmp [-H sha256|sha3-256|sha512|256] prove file
+zkcmp [-s] [-H sha256|sha3-256|sha512|256] verify commitment proof
 ```
 
 ### `commit`
@@ -90,7 +90,7 @@ server$ zkcmp verify commit bob.proof
 
 ## Building
 
-On FreeBSD:
+On FreeBSD & OpenBSD:
 
 ```sh
 make
