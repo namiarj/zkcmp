@@ -1,5 +1,5 @@
 /*
- * Zero-knowledge Schnorr protocol:
+ * Schnorr Zero-Knowledge Proof
  *
  * x = H(file) mod q
  * Y = g^x mod p
@@ -9,7 +9,6 @@
  * c = H(Y || R) mod q
  * z = k + c*x mod q
  *
- * Verify:
  * g^z == R * Y^c mod p
  */
 
