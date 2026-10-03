@@ -25,9 +25,6 @@ main(int argc, char **argv)
 	pledge("stdio rpath", NULL);
 #endif
 
-	if (argc < 3)
-		usage();
-
 	while ((ch = getopt(argc, argv, "sH:")) != -1) {
 		switch (ch) {
 		case 's':
@@ -38,7 +35,7 @@ main(int argc, char **argv)
 				z.md = EVP_sha3_256();
 			else if (strcmp(optarg, "sha512-256") == 0)
 				z.md = EVP_sha512_256();
-			else if (strcmp(optarg, "sha256"))
+			else if (strcmp(optarg, "sha256") == 0)
 				usage();
 			break;
 		case '?':
@@ -54,18 +51,18 @@ main(int argc, char **argv)
 
 	switch (argv[0][0]) {
 	case 'c':
-		if (strcmp(argv[0], "commit") || argc != 2)
-			usage();
-		return cmd_commit(&z, argv[1]);
+		if (argc == 2 && strcmp(argv[0], "commit") == 0)
+			return cmd_commit(&z, argv[1]);
+		break;
 	case 'p':
-		if (strcmp(argv[0], "prove") || argc != 2)
-			usage();
-		return cmd_prove(&z, argv[1]);
+		if (argc == 2 && strcmp(argv[0], "prove") == 0)
+			return cmd_prove(&z, argv[1]);
+		break;	
 	case 'v':
-		if (strcmp(argv[0], "verify") || argc != 3)
-			usage();
-		return cmd_verify(&z, argv[1], argv[2]);
-	default:
-		usage();
+		if (argc == 3 && strcmp(argv[0], "verify") == 0)
+			return cmd_verify(&z, argv[1], argv[2]);
+		break;
 	}
+
+	usage();
 }
