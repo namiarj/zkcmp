@@ -19,14 +19,13 @@ int
 main(int argc, char **argv)
 {
 	struct zkcmp z = {.md = EVP_sha256()};
-	char *cmd;
 	int ch;
 
 #ifdef __OpenBSD__
 	pledge("stdio rpath", NULL);
 #endif
 
-	if (argc < 2)
+	if (argc < 3)
 		usage();
 
 	while ((ch = getopt(argc, argv, "sH:")) != -1) {
@@ -35,45 +34,37 @@ main(int argc, char **argv)
 			z.silent = 1;
 			break;
 		case 'H':
-			switch (optarg[3]) {
-			case '2':
-				if (strcmp(optarg, "sha256"))
-					usage();
-				break;
-			case '3':
-				if (strcmp(optarg, "sha3-256"))
-					usage();
+			if (strcmp(optarg, "sha3-256") == 0)
 				z.md = EVP_sha3_256();
-				break;
-			case '5':
-				if (strcmp(optarg, "sha512-256"))
-					usage();
+			else if (strcmp(optarg, "sha512-256") == 0)
 				z.md = EVP_sha512_256();
-				break;
-			case '?':
-			default:
+			else if (strcmp(optarg, "sha256"))
 				usage();
-			}
+			break;
+		case '?':
+			usage();
 		}
 	}
 
 	argc -= optind;
 	argv += optind;
-	cmd = argv[0];
 
-	switch (cmd[0]) {
+	if (argc < 2)
+		usage();
+
+	switch (argv[0][0]) {
 	case 'c':
-		if (strcmp(cmd, "commit") || argc != 1)
+		if (strcmp(argv[0], "commit") || argc != 2)
 			usage();
-		return cmd_commit(&z, argv[0]);
+		return cmd_commit(&z, argv[1]);
 	case 'p':
-		if (strcmp(cmd, "prove") || argc != 1)
+		if (strcmp(argv[0], "prove") || argc != 2)
 			usage();
-		return cmd_prove(&z, argv[0]);
+		return cmd_prove(&z, argv[1]);
 	case 'v':
-		if (strcmp(cmd, "verify") || argc != 2)
+		if (strcmp(argv[0], "verify") || argc != 3)
 			usage();
-		return cmd_verify(&z, argv[0], argv[1]);
+		return cmd_verify(&z, argv[1], argv[2]);
 	default:
 		usage();
 	}
