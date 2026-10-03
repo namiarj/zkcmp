@@ -16,17 +16,11 @@
 
 ```text
 file
-  |
-  v
+↓
 hash
-  |
-  v
-secret
-  |
-  v
+↓
 commitment
-  |
-  v
+↓
 zero-knowledge proof
 ```
 
@@ -42,10 +36,10 @@ The default hash is SHA-256. SHA3-256 or SHA512-256 can also be selected.
 
 `zkcmp` provides three operations:
 
-```text
-zkcmp [-H sha256|sha3-256|sha512|256] commit file
-zkcmp [-H sha256|sha3-256|sha512|256] prove file
-zkcmp [-s] [-H sha256|sha3-256|sha512|256] verify commitment proof
+```
+zkcmp [-H sha256|sha3-256|sha512-256] commit file
+zkcmp [-H sha256|sha3-256|sha512-256] prove file
+zkcmp [-s] [-H sha256|sha3-256|sha512-256] verify commitment proof
 ```
 
 ### `commit`
