@@ -35,7 +35,7 @@ main(int argc, char **argv)
 				z.md = EVP_sha3_256();
 			else if (strcmp(optarg, "sha512-256") == 0)
 				z.md = EVP_sha512_256();
-			else if (strcmp(optarg, "sha256") == 0)
+			else if (strcmp(optarg, "sha256"))
 				usage();
 			break;
 		case '?':
@@ -46,7 +46,7 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 2)
+	if (argc < 2 || argv == NULL || argv[0] == NULL)
 		usage();
 
 	switch (argv[0][0]) {
