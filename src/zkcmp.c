@@ -22,7 +22,8 @@ main(int argc, char **argv)
 	int ch;
 
 #ifdef __OpenBSD__
-	pledge("stdio rpath", NULL);
+	if (pledge("stdio rpath", NULL) == -1)
+		err(ERR_EXIT, "pledge");
 #endif
 	while ((ch = getopt(argc, argv, "sH:")) != -1) {
 		switch (ch) {
