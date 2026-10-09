@@ -16,7 +16,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>`
+#include <string.h>
 #include <unistd.h>
 
 #include "zkcmp.h"
@@ -87,7 +87,6 @@ hash_path(const char *path, unsigned char digest[DIGEST_LEN],
 	EVP_MD_CTX *md;
 	size_t n;
 	unsigned int digest_len;
-	int fd = -1;
 	int ret = -1;
 
 	fp = fopen(path, "rb");
