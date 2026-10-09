@@ -73,23 +73,23 @@ challenge(struct zkcmp *z, const unsigned char *y,
 	if (md == NULL)
 		return -1;
 	if (EVP_DigestInit_ex(md, z->md, NULL) != 1)
-		goto out;
+		goto done;
 	if (EVP_DigestUpdate(md, y, GROUP_LEN) != 1)
-		goto out;
+		goto done;
 	if (EVP_DigestUpdate(md, r, GROUP_LEN) != 1)
-		goto out;
+		goto done;
 	if (EVP_DigestFinal_ex(md, digest, &digest_len) != 1)
-		goto out;
+		goto done;
 	if (digest_len != DIGEST_LEN)
-		goto out;
+		goto done;
 	if (BN_bin2bn(digest, DIGEST_LEN, c) == NULL)
-		goto out;
+		goto done;
 	if (BN_mod(c, c, z->q, z->ctx) != 1)
-		goto out;
+		goto done;
 	ret = 0;
-out:
+done:
 	EVP_MD_CTX_free(md);
-	return ret;
+	return (ret);
 }
 
 int
@@ -114,26 +114,26 @@ prove(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
 	zz = BN_new();
 	if (x == NULL || k == NULL || r == NULL ||
 		c == NULL || cx == NULL || zz == NULL)
-		goto out;
+		goto done;
 	if (BN_mod(x, x, z->q, z->ctx) != 1)
-		goto out;
+		goto done;
 	if (BN_rand_range(k, z->q) != 1)
-		goto out;
+		goto done;
 	if (BN_mod_exp(r, z->g, k, z->p, z->ctx) != 1)
-		goto out;
+		goto done;
 	if (bn_fixed(r, rbuf, GROUP_LEN) != 0)
-		goto out;
+		goto done;
 	if (challenge(z, commitment, rbuf, c) != 0)
-		goto out;
+		goto done;
 	if (BN_mod_mul(cx, c, x, z->q, z->ctx) != 1)
-		goto out;
+		goto done;
 	if (BN_mod_add(zz, k, cx, z->q, z->ctx) != 1)
-		goto out;
+		goto done;
 	memcpy(proof, rbuf, GROUP_LEN);
 	if (bn_fixed(zz, proof + GROUP_LEN, GROUP_LEN) != 0)
-		goto out;
+		goto done;
 	ret = 0;
-out:
+done:
 	BN_clear_free(x);
 	BN_clear_free(k);
 	BN_free(r);
@@ -165,23 +165,23 @@ verify(struct zkcmp *z, const unsigned char commitment[GROUP_LEN],
 	rhs = BN_new();
 	if (y == NULL || r == NULL || zz == NULL ||
 		c == NULL || lhs == NULL || yc == NULL || rhs == NULL)
-		goto out;
+		goto done;
 	if (BN_is_zero(y) || BN_cmp(y, z->p) >= 0)
-		goto out;
+		goto done;
 	if (BN_is_zero(r) || BN_cmp(r, z->p) >= 0)
-		goto out;
+		goto done;
 	if (BN_cmp(zz, z->q) >= 0)
-		goto out;
+		goto done;
 	if (challenge(z, commitment, proof, c) != 0)
-		goto out;
+		goto done;
 	if (BN_mod_exp(lhs, z->g, zz, z->p, z->ctx) != 1)
-		goto out;
+		goto done;
 	if (BN_mod_exp(yc, y, c, z->p, z->ctx) != 1)
-		goto out;
+		goto done;
 	if (BN_mod_mul(rhs, r, yc, z->p, z->ctx) != 1)
-		goto out;
+		goto done;
 	valid = BN_cmp(lhs, rhs) == 0;
-out:
+done:
 	BN_free(y);
 	BN_free(r);
 	BN_free(zz);
