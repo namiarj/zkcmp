@@ -34,9 +34,6 @@ static const char *prime_hex =
 	"D87602733EC86A64521F2B18177B200CBBE117577A615D6C770988C0BAD946E2"
 	"08E24FA074E5AB3143DB5BFCE0FD108E4B82D120A93AD2CAFFFFFFFFFFFFFFFF";
 
-void setup_group(struct zkcmp*);
-void free_group(struct zkcmp*);
-int hash_path(const char*, unsigned char*, struct zkcmp*);
 int commit(struct zkcmp*, const unsigned char*, unsigned char*);
 int prove(struct zkcmp*, const unsigned char*, const unsigned char*, unsigned char*);
 int verify(struct zkcmp*, const unsigned char*, const unsigned char*);
