@@ -90,7 +90,8 @@ cmd_commit(struct zkcmp *z, char *path)
 	if (hash_path(path, digest, z) != 0)
 		err(ERR_EXIT, "failed to hash %s", path);
 #ifdef __OpenBSD__
-	pledge("stdio", NULL);
+	if (pledge("stdio", NULL) == -1)
+		err(ERR_EXIT, "pledge");
 #endif
 	if (commit(z, digest, commitment) != 0)
 		errx(ERR_EXIT, "commitment generation failed");
@@ -116,7 +117,8 @@ cmd_prove(struct zkcmp *z, char *path)
 	if (hash_path(path, digest, z) != 0)
 		err(ERR_EXIT, "failed to hash %s", path);
 #ifdef __OpenBSD__
-	pledge("stdio", NULL);
+	if (pledge("stdio", NULL) == -1)
+		err(ERR_EXIT, "pledge");
 #endif
 	if (commit(z, digest, commitment) != 0)
 		errx(ERR_EXIT, "commitment generation failed");
@@ -159,7 +161,8 @@ cmd_verify(struct zkcmp *z, char *commit_path, char *proof_path)
 	}
 	fclose(fp);
 #ifdef __OpenBSD__
-	pledge("stdio", NULL);
+	if (pledge("stdio", NULL) == -1)
+		err(ERR_EXIT, "pledge");
 #endif
 	setup_group(z);
 	n = EVP_DecodeBlock(commitment,
