@@ -24,7 +24,6 @@ main(int argc, char **argv)
 #ifdef __OpenBSD__
 	pledge("stdio rpath", NULL);
 #endif
-
 	while ((ch = getopt(argc, argv, "sH:")) != -1) {
 		switch (ch) {
 		case 's':
@@ -42,26 +41,23 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
-
 	argc -= optind;
 	argv += optind;
-	
 	switch (argc) {
 	case 2:
 		switch (argv[0][0]) {
 		case 'c':
 			if (strcmp(argv[0], "commit") == 0)
-				return cmd_commit(&z, argv[1]);
+				return (cmd_commit(&z, argv[1]));
 			break;
 		case 'p':
 			if (strcmp(argv[0], "prove") == 0)
-				return cmd_prove(&z, argv[1]);
+				return (cmd_prove(&z, argv[1]));
 		}
 		break;
 	case 3:
 		if (strcmp(argv[0], "verify") == 0)
-			return cmd_verify(&z, argv[1], argv[2]);
+			return (cmd_verify(&z, argv[1], argv[2]));
 	}
-	
 	usage();
 }
