@@ -9,9 +9,9 @@ _Noreturn static void
 usage(void)
 {
 	fprintf(stderr,
-		"usage: zkcmp [-H hash] -c file\n"
-		"       zkcmp [-H hash] -p file\n"
-		"       zkcmp [-s] [-H hash] commit proof\n");
+		"usage: zkcmp [-h hash] -c file\n"
+		"       zkcmp [-h hash] -p file\n"
+		"       zkcmp [-s] [-h hash] commit proof\n");
 	exit(ERR_EXIT);
 }
 
@@ -20,17 +20,21 @@ main(int argc, char **argv)
 {
 	struct zkcmp z = { .md = EVP_sha256() };
 	int ch;
+	int commit_flag, prove_flag = 0;
 
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
-	while ((ch = getopt(argc, argv, "sH:c:p:")) != -1) {
+	while ((ch = getopt(argc, argv, "c:p:h:s")) != -1) {
 		switch (ch) {
-		case 's':
-			z.silent = 1;
+		case 'c':
+			commit_flag = 1;
 			break;
-		case 'H':
+		case 'p':
+			prove_flag = 1;
+			break;
+		case 'h':
 			if (strcmp(optarg, "sha512-256") == 0)
 				z.md = EVP_sha512_256();
 			else if (strcmp(optarg, "sha3-256") == 0)
@@ -38,17 +42,24 @@ main(int argc, char **argv)
 			else if (strcmp(optarg, "sha256") != 0)
 				usage();
 			break;
-		case 'c':
-			return (cmd_commit(&z, optarg));
-		case 'p':
-			return (cmd_prove(&z, optarg));
+		case 's':
+			z.silent = 1;
+			break;
 		default:
 			usage();
 		}
 	}
 	argc -= optind;
 	argv += optind;
-	if (argc == 2)
+	switch (argc) {
+	case 1:
+		if (commit_flag)
+			return (cmd_commit(&z, optarg));
+		if (prove_flag)
+			return (cmd_prove(&z, optarg));
+		break;
+	case 2:
 		return (cmd_verify(&z, argv[0], argv[1]));
+	}
 	usage();
 }

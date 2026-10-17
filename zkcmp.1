@@ -7,17 +7,17 @@
 .Sh SYNOPSIS
 .Nm
 .Cm -c
-.Op Fl H Ar hash
+.Op Fl h Ar hash
 .Ar file
 .Pp
 .Nm
 .Cm -p
-.Op Fl H Ar hash
+.Op Fl h Ar hash
 .Ar file
 .Pp
 .Nm
 .Op Fl s
-.Op Fl H Ar hash
+.Op Fl h Ar hash
 .Ar commit
 .Ar proof
 .Pp
@@ -39,7 +39,7 @@ Generate a Base64-encoded zero-knowledge proof for
 Verify a zero-knowledge proof against a public commitment.
 .Sh OPTIONS
 .Bl -tag -width Ds
-.It Fl H Ar hash
+.It Fl h Ar hash
 .Bl -tag -width Ds
 .It Ar sha256
 SHA-256 is the default.
@@ -87,7 +87,7 @@ $ ssh host2 'zkcmp commit proof'
 
 Use SHA3-256 for proof generation:
 .Bd -literal -offset indent
-$ zkcmp -p -H sha3-256 file
+$ zkcmp -p -h sha3-256 file
 .Ed
 .Sh EXIT STATUS
 .Ex
