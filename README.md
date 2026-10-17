@@ -47,7 +47,7 @@ zkcmp [-s] [-H sha256|sha3-256|sha512-256] commit proof
 Creates a reusable public commitment from a file.
 
 ```sh
-zkcmp -c release.tar > commitment
+zkcmp -c release.tar > release.tar.commit
 ```
 
 A commitment can be published once and used as the public statement for multiple independent proofs.
@@ -57,7 +57,7 @@ A commitment can be published once and used as the public statement for multiple
 Creates a proof from a local file.
 
 ```sh
-zkcmp -p release.tar > proof
+zkcmp -p release.tar > release.tar.proof
 ```
 
 ### Verification
@@ -65,7 +65,7 @@ zkcmp -p release.tar > proof
 Verifies a proof against a previously created commitment.
 
 ```sh
-zkcmp commitment proof
+zkcmp release.tar.commit release.tar.proof
 ```
 
 This is useful when a commitment has been published and multiple parties need to demonstrate knowledge of the corresponding secret.
