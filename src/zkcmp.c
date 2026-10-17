@@ -19,6 +19,7 @@ int
 main(int argc, char **argv)
 {
 	struct zkcmp z = { .md = EVP_sha256() };
+	const char *file = NULL;
 	int ch;
 	char cmd = 0;
 
@@ -29,12 +30,11 @@ main(int argc, char **argv)
 	while ((ch = getopt(argc, argv, "c:p:h:s")) != -1) {
 		switch (ch) {
 		case 'c':
-			cmd = 'c';
-			break;
 		case 'p':
 			if (cmd)
 				usage();
-			cmd = 'p';
+			cmd = ch;
+			file = optarg;
 			break;
 		case 'h':
 			if (strcmp(optarg, "sha512-256") == 0)
@@ -57,13 +57,14 @@ main(int argc, char **argv)
 	case 0:
 		switch(cmd) {
 		case 'c':
-			return (cmd_commit(&z, optarg));
+			return (cmd_commit(&z, file));
 		case 'p':
-			return (cmd_prove(&z, optarg));
+			return (cmd_prove(&z, file));
 		}
 		break;
 	case 2:
-		return (cmd_verify(&z, argv[0], argv[1]));
+		if (!cmd)
+			return (cmd_verify(&z, argv[0], argv[1]));
 	}
 	usage();
 }

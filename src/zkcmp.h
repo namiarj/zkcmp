@@ -37,6 +37,6 @@ static const char *prime_hex =
 int commit(struct zkcmp*, const unsigned char*, unsigned char*);
 int prove(struct zkcmp*, const unsigned char*, const unsigned char*, unsigned char*);
 int verify(struct zkcmp*, const unsigned char*, const unsigned char*);
-int cmd_commit(struct zkcmp*, char*);
-int cmd_prove(struct zkcmp*, char*);
-int cmd_verify(struct zkcmp*, char*, char*);
+int cmd_commit(struct zkcmp*, const char*);
+int cmd_prove(struct zkcmp*, const char*);
+int cmd_verify(struct zkcmp*, const char*, const char*);

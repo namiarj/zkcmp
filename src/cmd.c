@@ -79,7 +79,7 @@ clean:
 }
 
 int
-cmd_commit(struct zkcmp *z, char *path)
+cmd_commit(struct zkcmp *z, const char *path)
 {
 	unsigned char digest[DIGEST_LEN];
 	unsigned char commitment[GROUP_LEN];
@@ -105,7 +105,7 @@ cmd_commit(struct zkcmp *z, char *path)
 }
 
 int
-cmd_prove(struct zkcmp *z, char *path)
+cmd_prove(struct zkcmp *z, const char *path)
 {
 	unsigned char digest[DIGEST_LEN];
 	unsigned char commitment[GROUP_LEN];
@@ -134,7 +134,7 @@ cmd_prove(struct zkcmp *z, char *path)
 }
 
 int
-cmd_verify(struct zkcmp *z, char *commit_path, char *proof_path)
+cmd_verify(struct zkcmp *z, const char *commit_path, const char *proof_path)
 {
 	unsigned char commitment[GROUP_LEN];
 	unsigned char proof[GROUP_LEN * 2];
