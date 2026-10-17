@@ -31,10 +31,10 @@ main(int argc, char **argv)
 			z.silent = 1;
 			break;
 		case 'H':
-			if (strcmp(optarg, "sha3-256") == 0)
-				z.md = EVP_sha3_256();
-			else if (strcmp(optarg, "sha512-256") == 0)
+			if (strcmp(optarg, "sha512-256") == 0)
 				z.md = EVP_sha512_256();
+			else if (strcmp(optarg, "sha3-256") == 0)
+				z.md = EVP_sha3_256();
 			else if (strcmp(optarg, "sha256") != 0)
 				usage();
 			break;
