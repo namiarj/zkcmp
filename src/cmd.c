@@ -12,14 +12,13 @@ setup_group(struct zkcmp *z)
 	BIGNUM *pm1;
 
 	z->ctx = BN_CTX_new();
-	z->p = BN_new();
 	z->q = BN_new();
 	z->g = BN_new();
-	if (z->ctx == NULL || z->p == NULL ||
-		z->q == NULL || z->g == NULL)
+	if (z->ctx == NULL || z->q == NULL || z->g == NULL)
 		errx(ERR_EXIT, "OpenSSL allocation failed");
-	if (BN_hex2bn(&z->p, prime_hex) == 0)
-		errx(ERR_EXIT, "invalid group prime");
+	z->p = BN_bin2bn(prime, sizeof(prime), NULL);
+	if (z->p == NULL)
+		errx(ERR_EXIT, "OpenSSL allocation failed");
 	pm1 = BN_dup(z->p);
 	if (pm1 == NULL)
 		errx(ERR_EXIT, "OpenSSL allocation failed");
