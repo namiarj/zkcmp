@@ -9,9 +9,9 @@ _Noreturn static void
 usage(void)
 {
 	fprintf(stderr,
-		"usage: zkcmp [-H hash] commit file\n"
-		"       zkcmp [-H hash] prove file\n"
-		"       zkcmp [-s] [-H hash] verify commit proof\n");
+		"usage: zkcmp [-H hash] -c file\n"
+		"       zkcmp [-H hash] -p file\n"
+		"       zkcmp [-s] [-H hash] commit proof\n");
 	exit(ERR_EXIT);
 }
 
@@ -25,7 +25,7 @@ main(int argc, char **argv)
 	if (pledge("stdio rpath", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
-	while ((ch = getopt(argc, argv, "sH:")) != -1) {
+	while ((ch = getopt(argc, argv, "sH:c:p:")) != -1) {
 		switch (ch) {
 		case 's':
 			z.silent = 1;
@@ -38,27 +38,17 @@ main(int argc, char **argv)
 			else if (strcmp(optarg, "sha256") != 0)
 				usage();
 			break;
+		case 'c':
+			return (cmd_commit(&z, optarg));
+		case 'p':
+			return (cmd_prove(&z, optarg));
 		default:
 			usage();
 		}
 	}
 	argc -= optind;
 	argv += optind;
-	switch (argc) {
-	case 2:
-		switch (argv[0][0]) {
-		case 'c':
-			if (strcmp(argv[0], "commit") == 0)
-				return (cmd_commit(&z, argv[1]));
-			break;
-		case 'p':
-			if (strcmp(argv[0], "prove") == 0)
-				return (cmd_prove(&z, argv[1]));
-		}
-		break;
-	case 3:
-		if (strcmp(argv[0], "verify") == 0)
-			return (cmd_verify(&z, argv[1], argv[2]));
-	}
+	if (argc == 2)
+		return (cmd_verify(&z, argv[1], argv[2]));
 	usage();
 }

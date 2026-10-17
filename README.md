@@ -37,35 +37,35 @@ The default hash is SHA-256. SHA3-256 or SHA512-256 can also be selected.
 `zkcmp` provides three operations:
 
 ```
-zkcmp [-H sha256|sha3-256|sha512-256] commit file
-zkcmp [-H sha256|sha3-256|sha512-256] prove file
-zkcmp [-s] [-H sha256|sha3-256|sha512-256] verify commitment proof
+zkcmp [-H sha256|sha3-256|sha512-256] -c file
+zkcmp [-H sha256|sha3-256|sha512-256] -p file
+zkcmp [-s] [-H sha256|sha3-256|sha512-256] commit proof
 ```
 
-### `commit`
+### `-c`
 
 Creates a reusable public commitment from a file.
 
 ```sh
-zkcmp commit release.tar > commitment
+zkcmp -c release.tar > commitment
 ```
 
 A commitment can be published once and used as the public statement for multiple independent proofs.
 
-### `prove`
+### `-p`
 
 Creates a proof from a local file.
 
 ```sh
-zkcmp prove release.tar > proof
+zkcmp -p release.tar > proof
 ```
 
-### `verify`
+### Verification
 
 Verifies a proof against a previously created commitment.
 
 ```sh
-zkcmp verify commitment proof
+zkcmp commitment proof
 ```
 
 This is useful when a commitment has been published and multiple parties need to demonstrate knowledge of the corresponding secret.
@@ -73,13 +73,13 @@ This is useful when a commitment has been published and multiple parties need to
 For example:
 
 ```sh
-server$ zkcmp commit release.tar > commitment
+server$ zkcmp -c release.tar > commitment
 
-alice$ zkcmp prove release.tar > alice.proof
-bob$   zkcmp prove release.tar > bob.proof
+alice$ zkcmp -p release.tar > alice.proof
+bob$   zkcmp -p release.tar > bob.proof
 
-server$ zkcmp verify commit alice.proof
-server$ zkcmp verify commit bob.proof
+server$ zkcmp commit alice.proof
+server$ zkcmp commit bob.proof
 ```
 
 ## Building

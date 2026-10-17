@@ -6,20 +6,17 @@
 .Nd zero-knowledge file comparison utility
 .Sh SYNOPSIS
 .Nm
-.Cm commit
-.Op Fl h
+.Cm -c
 .Op Fl H Ar hash
 .Ar file
 .Pp
 .Nm
-.Cm prove
-.Op Fl h
+.Cm -p
 .Op Fl H Ar hash
 .Ar file
 .Pp
 .Nm
-.Cm verify
-.Op Fl hs
+.Op Fl s
 .Op Fl H Ar hash
 .Ar commit
 .Ar proof
@@ -30,92 +27,30 @@ The
 utility provides zero-knowledge comparison and proof operations for files.
 It allows a prover to demonstrate that a file matches a commitment without
 revealing the file's cryptographic hash.
-
-The
-.Nm
-utility provides three subcommands:
-.Cm commit ,
-.Cm prove ,
-and
-.Cm verify .
-The
-.Cm commit
-and
-.Cm prove
-commands operate on a file and produce a commitment or proof on standard
-output.
-The
-.Cm verify
-command verifies a proof against a public commitment.
-
-.Sh OPTIONS
-The following options are available to
-.Cm commit
-and
-.Cm prove :
-
-.Bl -tag -width Ds
-.It Fl h
-Do not follow symbolic links.
-
-.It Fl H Ar hash
-Select the hash algorithm.
-Supported values are:
-.Bl -tag -width Ds
-.It Ar sha256
-SHA-256. This is the default.
-.It Ar sha3-256
-SHA3-256.
-.It Ar sha512-256
-SHA512-256.
-.El
-
-The same hash algorithm must be selected when generating and verifying
-cryptographic values.
-.El
-
-The following additional option is available to
-.Cm verify :
-
-.Bl -tag -width Ds
-.It Fl s
-Print nothing when verification fails; return exit status only.
-.El
-
 .Sh SUBCOMMANDS
-.Bl -tag -width "Cm verify"
-.It Cm commit Ar file
-Hash
-.Ar file
-and generate a Base64-encoded public commitment.
-
-.It Cm prove Ar file
+.Bl -tag -width Ds
+.It Cm zkcmp -c Ar file
+Generate a Base64-encoded public commitment for
+.Ar file.
+.It Cm zkcmp -p Ar file
 Generate a Base64-encoded zero-knowledge proof for
 .Ar file .
-
-.It Cm verify Ar commit Ar proof
+.It Cm zkcmp Ar commit Ar proof
 Verify a zero-knowledge proof against a public commitment.
-
-The
-.Ar commit
-and
-.Ar proof
-arguments may be provided as literal parameters, file paths, or
-.Cm -
-to read the parameter from standard input.
-
-Hash
-.Ar file
-and verify the proof supplied in
-.Ar proof .
-
-The
-.Ar proof
-argument may be provided as a literal parameter, a file path, or
-.Cm -
-to read the proof from standard input.
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl H Ar hash
+.Bl -tag -width Ds
+.It Ar sha256
+SHA-256 is the default.
+.It Ar sha3-256
+.It Ar sha512-256
 .El
-
+.El
+.Bl -tag -width Ds
+.It Fl s
+Silent mode; return exit status only.
+.El
 .Sh PROTOCOL
 The zero-knowledge protocol is based on a Schnorr-style proof using the
 3072-bit Modular Exponentiation Group defined by RFC 3526.
@@ -124,59 +59,49 @@ The file is hashed using the selected hash algorithm.
 The resulting digest is used to derive the secret value for the proof.
 The proof uses a Fiat-Shamir challenge to provide a non-interactive
 verification protocol.
-
 .Sh EXAMPLES
 Generate a commitment for a file:
-
 .Bd -literal -offset indent
-$ zkcmp commit file > commit
+$ zkcmp -c file > commit
 .Ed
 
 Generate a proof for a file:
-
 .Bd -literal -offset indent
-$ zkcmp prove file > proof
+$ zkcmp -p file > proof
 .Ed
 
 Verify a commitment and proof:
-
 .Bd -literal -offset indent
-$ zkcmp verify commit proof
+$ zkcmp commit proof
 .Ed
 
 Generate a commitment and proof once and allow multiple parties to verify
 them independently:
-
 .Bd -literal -offset indent
-$ zkcmp commit file > commit
-$ zkcmp prove file > proof
-$ zkcmp verify commit proof
-$ ssh host1 'zkcmp verify commit proof'
-$ ssh host2 'zkcmp verify commit proof'
+$ zkcmp -c file > commit
+$ zkcmp -p file > proof
+$ zkcmp commit proof
+$ ssh host1 'zkcmp commit proof'
+$ ssh host2 'zkcmp commit proof'
 .Ed
 
-Use SHA3-256 when generating a proof:
-
+Use SHA3-256 for proof generation:
 .Bd -literal -offset indent
-$ zkcmp prove -H sha3-256 file
+$ zkcmp -p -H sha3-256 file
 .Ed
-
 .Sh EXIT STATUS
 .Ex
 .Bl -tag -width Ds
 .It 0
 The operation completed or the proof verified successfully.
-
 .It 1
 The proof did not match.
-
 .It 2
 An operational error occurred.
 .El
-
 .Sh SEE ALSO
 .Xr cmp 1 ,
 .Xr ssh 1
-.Sh AUTHORS
+.Sh AUTHOR
 .An Nami Arjmandi
 .El
