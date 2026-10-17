@@ -1,3 +1,4 @@
+#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,11 +9,10 @@
 _Noreturn static void
 usage(void)
 {
-	fprintf(stderr,
+	err(ERR_EXIT,
 		"usage: zkcmp [-h hash] -c file\n"
 		"       zkcmp [-h hash] -p file\n"
 		"       zkcmp [-s] [-h hash] commit proof\n");
-	exit(ERR_EXIT);
 }
 
 int
