@@ -37,11 +37,11 @@ main(int argc, char **argv)
 			file = optarg;
 			break;
 		case 'h':
-			if (strcmp(optarg, "sha512-256") == 0)
+			if (!strcmp(optarg, "sha512-256"))
 				z.md = EVP_sha512_256();
-			else if (strcmp(optarg, "sha3-256") == 0)
+			else if (!strcmp(optarg, "sha3-256"))
 				z.md = EVP_sha3_256();
-			else if (strcmp(optarg, "sha256") != 0)
+			else if (strcmp(optarg, "sha256"))
 				usage();
 			break;
 		case 's':
