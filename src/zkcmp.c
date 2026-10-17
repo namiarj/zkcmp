@@ -19,9 +19,9 @@ int
 main(int argc, char **argv)
 {
 	struct zkcmp z = { .md = EVP_sha256() };
-	const char *file = NULL;
 	int ch;
 	char cmd = 0;
+	const char *file;
 
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath", NULL) == -1)
