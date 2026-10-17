@@ -49,6 +49,6 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 	if (argc == 2)
-		return (cmd_verify(&z, argv[1], argv[2]));
+		return (cmd_verify(&z, argv[0], argv[1]));
 	usage();
 }
