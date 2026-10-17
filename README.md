@@ -73,13 +73,13 @@ This is useful when a commitment has been published and multiple parties need to
 For example:
 
 ```sh
-server$ zkcmp -c release.tar > commitment
+server$ zkcmp -c release.tar > release.tar.commit
 
 alice$ zkcmp -p release.tar > alice.proof
 bob$   zkcmp -p release.tar > bob.proof
 
-server$ zkcmp commit alice.proof
-server$ zkcmp commit bob.proof
+server$ zkcmp release.tar.commit alice.proof
+server$ zkcmp release.tar.commit bob.proof
 ```
 
 ## Building
