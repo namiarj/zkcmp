@@ -55,7 +55,6 @@ static const unsigned char prime[] = {
 	0xa9, 0x3a, 0xd2, 0xca, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 };
 
-
 int commit(struct zkcmp*, const unsigned char*, unsigned char*);
 int prove(struct zkcmp*, const unsigned char*, const unsigned char*, unsigned char*);
 int verify(struct zkcmp*, const unsigned char*, const unsigned char*);
