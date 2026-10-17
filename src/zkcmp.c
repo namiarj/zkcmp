@@ -20,7 +20,7 @@ main(int argc, char **argv)
 {
 	struct zkcmp z = { .md = EVP_sha256() };
 	int ch;
-	int commit_flag = 0, prove_flag = 0;
+	char cmd = 0;
 
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath", NULL) == -1)
@@ -29,10 +29,12 @@ main(int argc, char **argv)
 	while ((ch = getopt(argc, argv, "c:p:h:s")) != -1) {
 		switch (ch) {
 		case 'c':
-			commit_flag = 1;
+			cmd = 'c';
 			break;
 		case 'p':
-			prove_flag = 1;
+			if (cmd)
+				usage();
+			cmd = 'p';
 			break;
 		case 'h':
 			if (strcmp(optarg, "sha512-256") == 0)
@@ -53,10 +55,12 @@ main(int argc, char **argv)
 	argv += optind;
 	switch (argc) {
 	case 0:
-		if (commit_flag)
+		switch(cmd) {
+		case 'c':
 			return (cmd_commit(&z, optarg));
-		if (prove_flag)
+		case 'p':
 			return (cmd_prove(&z, optarg));
+		}
 		break;
 	case 2:
 		return (cmd_verify(&z, argv[0], argv[1]));
