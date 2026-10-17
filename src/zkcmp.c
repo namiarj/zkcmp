@@ -20,7 +20,7 @@ main(int argc, char **argv)
 {
 	struct zkcmp z = { .md = EVP_sha256() };
 	int ch;
-	int commit_flag, prove_flag = 0;
+	int commit_flag = 0, prove_flag = 0;
 
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath", NULL) == -1)
@@ -52,7 +52,7 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 	switch (argc) {
-	case 1:
+	case 0:
 		if (commit_flag)
 			return (cmd_commit(&z, optarg));
 		if (prove_flag)
