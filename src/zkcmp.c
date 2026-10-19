@@ -56,7 +56,7 @@ main(int argc, char **argv)
 	argv += optind;
 	switch (argc) {
 	case 0:
-		switch(cmd) {
+		switch (cmd) {
 		case 'c':
 			return commit_file(&z, file);
 		case 'p':
@@ -64,7 +64,7 @@ main(int argc, char **argv)
 		}
 		break;
 	case 2:
-		switch(cmd) {
+		switch (cmd) {
 		case 0:
 			return verify_file(&z, argv[0], argv[1], silent);
 		}
