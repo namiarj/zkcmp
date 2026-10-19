@@ -9,10 +9,10 @@
 _Noreturn static void
 usage(void)
 {
-	err(ERR_EXIT,
-		"usage: zkcmp [-h hash] -c file\n"
-		"       zkcmp [-h hash] -p file\n"
-		"       zkcmp [-s] [-h hash] commit proof\n");
+	fprintf(stderr,	"usage: zkcmp [-h hash] -c file\n"
+			"       zkcmp [-h hash] -p file\n"
+			"       zkcmp [-s] [-h hash] commit proof\n");
+	exit(ERR_EXIT);
 }
 
 int
