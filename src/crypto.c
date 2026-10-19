@@ -71,7 +71,7 @@ challenge(struct zkcmp *z, const unsigned char *y,
 
 	md = EVP_MD_CTX_new();
 	if (md == NULL)
-		return -1;
+		return (ret);
 	if (EVP_DigestInit_ex(md, z->md, NULL) != 1)
 		goto done;
 	if (EVP_DigestUpdate(md, y, GROUP_LEN) != 1)
