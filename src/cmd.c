@@ -165,7 +165,7 @@ verify_file(struct zkcmp *z, const char *commit_path, const char *proof_path,
 	if (EVP_DecodeBlock(proof, (unsigned char *)proof_buf,
 		(int)strlen(proof_buf)) != GROUP_LEN * 2)
 			errx(ERR_EXIT, "invalid proof");
-	status = verify(z, commitment, proof) ? OK_EXIT : DIFF_EXIT;
+	status = verify(z, commitment, proof);
 	if (status == DIFF_EXIT && !silent)
 		warnx("commitment and proof mismatched");
 	free_group(z);

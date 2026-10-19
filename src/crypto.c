@@ -149,7 +149,7 @@ verify(struct zkcmp *z, const unsigned char commitment[GROUP_LEN],
 	BIGNUM *lhs;
 	BIGNUM *yc;
 	BIGNUM *rhs;
-	int valid = 0;
+	int status = DIFF_EXIT;
 
 	y = BN_bin2bn(commitment, GROUP_LEN, NULL);
 	r = BN_bin2bn(proof, GROUP_LEN, NULL);
@@ -175,7 +175,7 @@ verify(struct zkcmp *z, const unsigned char commitment[GROUP_LEN],
 		goto done;
 	if (BN_mod_mul(rhs, r, yc, z->p, z->ctx) != 1)
 		goto done;
-	valid = BN_cmp(lhs, rhs) == 0;
+	status = (BN_cmp(lhs, rhs) == 0) ? OK_EXIT : DIFF_EXIT;
 done:
 	BN_free(y);
 	BN_free(r);
@@ -184,5 +184,5 @@ done:
 	BN_free(lhs);
 	BN_free(yc);
 	BN_free(rhs);
-	return valid;
+	return status;
 }
