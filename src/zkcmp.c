@@ -22,6 +22,7 @@ main(int argc, char **argv)
 	int ch;
 	char cmd = 0;
 	const char *file;
+	int silent = 0;
 
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath", NULL) == -1)
@@ -45,7 +46,7 @@ main(int argc, char **argv)
 				usage();
 			break;
 		case 's':
-			z.silent = 1;
+			silent = 1;
 			break;
 		default:
 			usage();
@@ -64,7 +65,7 @@ main(int argc, char **argv)
 		break;
 	case 2:
 		if (!cmd)
-			return (cmd_verify(&z, argv[0], argv[1]));
+			return (cmd_verify(&z, argv[0], argv[1]), silent);
 	}
 	usage();
 }

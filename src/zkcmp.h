@@ -16,7 +16,6 @@ struct zkcmp {
 	BIGNUM *g;
 	BN_CTX *ctx;
 	const EVP_MD *md;
-	int silent;
 };
 
 /* RFC 3526 / 3072-bit MODP group. */
@@ -60,4 +59,4 @@ int prove(struct zkcmp*, const unsigned char*, const unsigned char*, unsigned ch
 int verify(struct zkcmp*, const unsigned char*, const unsigned char*);
 int cmd_commit(struct zkcmp*, const char*);
 int cmd_prove(struct zkcmp*, const char*);
-int cmd_verify(struct zkcmp*, const char*, const char*);
+int cmd_verify(struct zkcmp*, const char*, const char*, const int);

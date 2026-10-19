@@ -132,7 +132,8 @@ cmd_prove(struct zkcmp *z, const char *path)
 }
 
 int
-cmd_verify(struct zkcmp *z, const char *commit_path, const char *proof_path)
+cmd_verify(struct zkcmp *z, const char *commit_path, const char *proof_path,
+	const int silent)
 {
 	unsigned char commitment[GROUP_LEN];
 	unsigned char proof[GROUP_LEN * 2];
@@ -174,7 +175,7 @@ cmd_verify(struct zkcmp *z, const char *commit_path, const char *proof_path)
 	if (n != GROUP_LEN * 2)
 		errx(ERR_EXIT, "invalid proof");
 	status = verify(z, commitment, proof) ? OK_EXIT : DIFF_EXIT;
-	if (status == DIFF_EXIT && !z->silent)
+	if (status == DIFF_EXIT && !silent)
 		warnx("commitment and proof mismatched");
 	free_group(z);
 	return (status);
