@@ -75,13 +75,20 @@ clean:
 	return ret;
 }
 
+static void
+print_base64(const unsigned char *data, const int len)
+{
+	char encoded[B64_LEN];
+	if (EVP_EncodeBlock((unsigned char *)encoded, data, len) < 0)
+		errx(ERR_EXIT, "base64 encoding failed");
+	puts(encoded);
+}
+
 int
 commit_file(struct zkcmp *z, const char *file)
 {
 	unsigned char digest[DIGEST_LEN];
 	unsigned char commitment[GROUP_LEN];
-	char encoded[B64_LEN];
-	int n;
 
 	init_group(z);
 	if (hash_file(file, digest, z) != 0)
@@ -93,11 +100,7 @@ commit_file(struct zkcmp *z, const char *file)
 	if (commit(z, digest, commitment) != 0)
 		errx(ERR_EXIT, "commitment generation failed");
 	free_group(z);
-	n = EVP_EncodeBlock((unsigned char *)encoded,
-		commitment, sizeof(commitment));
-	if (n < 0)
-		errx(ERR_EXIT, "base64 encoding failed");
-	puts(encoded);
+	print_base64(commitment, sizeof(commitment));
 	return OK_EXIT;
 }
 
@@ -107,8 +110,6 @@ prove_file(struct zkcmp *z, const char *file)
 	unsigned char digest[DIGEST_LEN];
 	unsigned char commitment[GROUP_LEN];
 	unsigned char proof[GROUP_LEN * 2];
-	char encoded[B64_LEN];
-	int n;
 
 	init_group(z);
 	if (hash_file(file, digest, z) != 0)
@@ -122,11 +123,7 @@ prove_file(struct zkcmp *z, const char *file)
 	if (prove(z, digest, commitment, proof) != 0)
 		errx(ERR_EXIT, "proof generation failed");
 	free_group(z);
-	n = EVP_EncodeBlock((unsigned char *)encoded,
-		proof, sizeof(proof));
-	if (n < 0)
-		errx(ERR_EXIT, "base64 encoding failed");
-	puts(encoded);
+	print_base64(proof, sizeof(proof));
 	return OK_EXIT;
 }
 
