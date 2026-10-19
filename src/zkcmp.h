@@ -57,6 +57,6 @@ static const unsigned char prime[] = {
 int commit(struct zkcmp*, const unsigned char*, unsigned char*);
 int prove(struct zkcmp*, const unsigned char*, const unsigned char*, unsigned char*);
 int verify(struct zkcmp*, const unsigned char*, const unsigned char*);
-int cmd_commit(struct zkcmp*, const char*);
-int cmd_prove(struct zkcmp*, const char*);
-int cmd_verify(struct zkcmp*, const char*, const char*, const int);
+int commit_file(struct zkcmp*, const char*);
+int prove_file(struct zkcmp*, const char*);
+int verify_file(struct zkcmp*, const char*, const char*, const int);

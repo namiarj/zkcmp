@@ -7,7 +7,7 @@
 #include "zkcmp.h"
 
 static void
-setup_group(struct zkcmp *z)
+init_group(struct zkcmp *z)
 {
 	BIGNUM *pm1;
 
@@ -41,7 +41,7 @@ free_group(struct zkcmp *z)
 }
 
 static int
-hash_path(const char *path, unsigned char digest[DIGEST_LEN],
+hash_file(const char *path, unsigned char digest[DIGEST_LEN],
 	struct zkcmp *z)
 {
 	FILE *fp;
@@ -77,16 +77,16 @@ clean:
 }
 
 int
-cmd_commit(struct zkcmp *z, const char *path)
+commit_file(struct zkcmp *z, const char *file)
 {
 	unsigned char digest[DIGEST_LEN];
 	unsigned char commitment[GROUP_LEN];
 	char encoded[B64_LEN];
 	int n;
 
-	setup_group(z);
-	if (hash_path(path, digest, z) != 0)
-		err(ERR_EXIT, "failed to hash %s", path);
+	init_group(z);
+	if (hash_file(file, digest, z) != 0)
+		err(ERR_EXIT, "failed to hash %s", file);
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
@@ -103,7 +103,7 @@ cmd_commit(struct zkcmp *z, const char *path)
 }
 
 int
-cmd_prove(struct zkcmp *z, const char *path)
+prove_file(struct zkcmp *z, const char *file)
 {
 	unsigned char digest[DIGEST_LEN];
 	unsigned char commitment[GROUP_LEN];
@@ -111,9 +111,9 @@ cmd_prove(struct zkcmp *z, const char *path)
 	char encoded[B64_LEN];
 	int n;
 
-	setup_group(z);
-	if (hash_path(path, digest, z) != 0)
-		err(ERR_EXIT, "failed to hash %s", path);
+	init_group(z);
+	if (hash_file(file, digest, z) != 0)
+		err(ERR_EXIT, "failed to hash %s", file);
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
@@ -132,7 +132,7 @@ cmd_prove(struct zkcmp *z, const char *path)
 }
 
 int
-cmd_verify(struct zkcmp *z, const char *commit_path, const char *proof_path,
+verify_file(struct zkcmp *z, const char *commit_path, const char *proof_path,
 	const int silent)
 {
 	unsigned char commitment[GROUP_LEN];
@@ -163,7 +163,7 @@ cmd_verify(struct zkcmp *z, const char *commit_path, const char *proof_path,
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
-	setup_group(z);
+	init_group(z);
 	n = EVP_DecodeBlock(commitment,
 		(unsigned char *)commitment_buf,
 		(int)strlen(commitment_buf));
