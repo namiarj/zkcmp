@@ -28,11 +28,11 @@ bn_fixed(const BIGNUM *bn, unsigned char *dst, size_t len)
 
 	n = (size_t)BN_num_bytes(bn);
 	if (n > len)
-		return (-1);
+		return -1;
 	memset(dst, 0, len);
 	if (n != 0)
 		BN_bn2bin(bn, dst + len - n);
-	return (0);
+	return 0;
 }
 
 int
@@ -71,7 +71,7 @@ challenge(struct zkcmp *z, const unsigned char *y,
 
 	md = EVP_MD_CTX_new();
 	if (md == NULL)
-		return (ret);
+		return ret;
 	if (EVP_DigestInit_ex(md, z->md, NULL) != 1)
 		goto done;
 	if (EVP_DigestUpdate(md, y, GROUP_LEN) != 1)
@@ -89,7 +89,7 @@ challenge(struct zkcmp *z, const unsigned char *y,
 	ret = 0;
 done:
 	EVP_MD_CTX_free(md);
-	return (ret);
+	return ret;
 }
 
 int
@@ -140,7 +140,7 @@ done:
 	BN_free(c);
 	BN_clear_free(cx);
 	BN_clear_free(zz);
-	return (ret);
+	return ret;
 }
 
 int
@@ -189,5 +189,5 @@ done:
 	BN_free(lhs);
 	BN_free(yc);
 	BN_free(rhs);
-	return (valid);
+	return valid;
 }

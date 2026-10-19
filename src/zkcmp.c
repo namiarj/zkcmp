@@ -58,14 +58,14 @@ main(int argc, char **argv)
 	case 0:
 		switch(cmd) {
 		case 'c':
-			return (cmd_commit(&z, file));
+			return cmd_commit(&z, file);
 		case 'p':
-			return (cmd_prove(&z, file));
+			return cmd_prove(&z, file);
 		}
 		break;
 	case 2:
 		if (!cmd)
-			return (cmd_verify(&z, argv[0], argv[1]), silent);
+			return cmd_verify(&z, argv[0], argv[1], silent);
 	}
 	usage();
 }

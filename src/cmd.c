@@ -53,7 +53,7 @@ hash_path(const char *path, unsigned char digest[DIGEST_LEN],
 
 	fp = fopen(path, "rb");
 	if (fp == NULL)
-		return (-1);
+		return ret;
 	md = EVP_MD_CTX_new();
 	if (md == NULL)
 		goto clean;
@@ -73,7 +73,7 @@ clean_md:
 	EVP_MD_CTX_free(md);
 clean:
 	fclose(fp);
-	return (ret);
+	return ret;
 }
 
 int
@@ -99,7 +99,7 @@ cmd_commit(struct zkcmp *z, const char *path)
 	if (n < 0)
 		errx(ERR_EXIT, "base64 encoding failed");
 	puts(encoded);
-	return (OK_EXIT);
+	return OK_EXIT;
 }
 
 int
@@ -128,7 +128,7 @@ cmd_prove(struct zkcmp *z, const char *path)
 	if (n < 0)
 		errx(ERR_EXIT, "base64 encoding failed");
 	puts(encoded);
-	return (OK_EXIT);
+	return OK_EXIT;
 }
 
 int
@@ -178,5 +178,5 @@ cmd_verify(struct zkcmp *z, const char *commit_path, const char *proof_path,
 	if (status == DIFF_EXIT && !silent)
 		warnx("commitment and proof mismatched");
 	free_group(z);
-	return (status);
+	return status;
 }
