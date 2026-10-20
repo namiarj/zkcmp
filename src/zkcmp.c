@@ -18,7 +18,7 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	struct zkcmp z = { .md = EVP_sha256() };
+	struct zkcmp z = { .h = EVP_sha256() };
 	int ch;
 	char cmd = 0;
 	const char *file;
@@ -39,9 +39,9 @@ main(int argc, char **argv)
 			break;
 		case 'h':
 			if (!strcmp(optarg, "sha512-256"))
-				z.md = EVP_sha512_256();
+				z.h = EVP_sha512_256();
 			else if (!strcmp(optarg, "sha3-256"))
-				z.md = EVP_sha3_256();
+				z.h = EVP_sha3_256();
 			else if (strcmp(optarg, "sha256"))
 				usage();
 			break;

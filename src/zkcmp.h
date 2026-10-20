@@ -16,7 +16,7 @@ struct zkcmp {
 	BIGNUM *q;
 	BIGNUM *g;
 	BN_CTX *ctx;
-	const EVP_MD *md;
+	const EVP_MD *h;
 };
 
 /* RFC 3526 / 3072-bit MODP group. */

@@ -59,21 +59,21 @@ static int
 challenge(struct zkcmp *z, const unsigned char *y,
 	const unsigned char *r, BIGNUM *c)
 {
-	EVP_MD_CTX *md;
+	EVP_MD_CTX *h;
 	unsigned char digest[DIGEST_LEN];
 	unsigned int digest_len;
 	int ret = -1;
 
-	md = EVP_MD_CTX_new();
-	if (md == NULL)
+	h = EVP_MD_CTX_new();
+	if (h == NULL)
 		return ret;
-	if (EVP_DigestInit_ex(md, z->md, NULL) != 1)
+	if (EVP_DigestInit_ex(h, z->h, NULL) != 1)
 		goto done;
-	if (EVP_DigestUpdate(md, y, GROUP_LEN) != 1)
+	if (EVP_DigestUpdate(h, y, GROUP_LEN) != 1)
 		goto done;
-	if (EVP_DigestUpdate(md, r, GROUP_LEN) != 1)
+	if (EVP_DigestUpdate(h, r, GROUP_LEN) != 1)
 		goto done;
-	if (EVP_DigestFinal_ex(md, digest, &digest_len) != 1)
+	if (EVP_DigestFinal_ex(h, digest, &digest_len) != 1)
 		goto done;
 	if (digest_len != DIGEST_LEN)
 		goto done;
@@ -83,7 +83,7 @@ challenge(struct zkcmp *z, const unsigned char *y,
 		goto done;
 	ret = 0;
 done:
-	EVP_MD_CTX_free(md);
+	EVP_MD_CTX_free(h);
 	return ret;
 }
 
