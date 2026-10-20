@@ -5,6 +5,7 @@
 #define DIFF_EXIT	1
 #define ERR_EXIT	2
 
+#define DOMAIN_SEPARATOR "zkcmp-domain-separator"
 #define GROUP_LEN	384
 #define DIGEST_LEN	32
 #define IO_BUF_LEN	16384

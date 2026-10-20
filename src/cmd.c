@@ -58,6 +58,8 @@ hash_file(const char *path, unsigned char digest[DIGEST_LEN],
 		goto clean;
 	if (EVP_DigestInit_ex(md, z->md, NULL) != 1)
 		goto clean_md;
+	if (EVP_DigestUpdate(md, DOMAIN_SEPARATOR, sizeof(DOMAIN_SEPARATOR)) != 1)
+		goto clean_md;
 	while ((n = fread(buf, 1, sizeof(buf), fp)) != 0)
 		if (EVP_DigestUpdate(md, buf, n) != 1)
 			goto clean_md;
