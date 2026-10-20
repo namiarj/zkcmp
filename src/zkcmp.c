@@ -49,7 +49,8 @@ hash_file(const char *path, unsigned char digest[DIGEST_LEN],
 clean_h:
 	EVP_MD_CTX_free(h);
 clean:
-	fclose(fp);
+	if (fclose(fp))
+		ret = -1;
 	return ret;
 }
 
@@ -157,7 +158,8 @@ verify_file(struct zkcmp *z, const char *commit_path, const char *proof_path,
 		fclose(fp);
 		errx(ERR_EXIT, "failed to read %s", commit_path);
 	}
-	fclose(fp);
+	if (fclose(fp))
+		err(ERR_EXIT, "failed to close %s", commit_path);
 	fp = fopen(proof_path, "r");
 	if (fp == NULL)
 		err(ERR_EXIT, "failed to open %s", proof_path);
@@ -165,7 +167,8 @@ verify_file(struct zkcmp *z, const char *commit_path, const char *proof_path,
 		fclose(fp);
 		errx(ERR_EXIT, "failed to read %s", proof_path);
 	}
-	fclose(fp);
+	if (fclose(fp))
+		err(ERR_EXIT, "failed to close %s", proof_path);
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
