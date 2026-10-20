@@ -1,6 +1,6 @@
 PROG= zkcmp
 .PATH: ${.CURDIR}/src
-SRCS= zkcmp.c cmd.c crypto.c
+SRCS= zkcmp.c cli.c crypto.c
 
 CFLAGS+= -O2 -Wall -Wextra -Wpedantic
 CFLAGS+= -I${.CURDIR}/include
