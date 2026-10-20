@@ -53,7 +53,6 @@ main(int argc, char **argv)
 		}
 	}
 	argc -= optind;
-	argv += optind;
 	switch (argc) {
 	case 0:
 		switch (cmd) {
@@ -66,6 +65,7 @@ main(int argc, char **argv)
 	case 2:
 		switch (cmd) {
 		case 0:
+			argv += optind;
 			return verify_file(&z, argv[0], argv[1], silent);
 		}
 	}
