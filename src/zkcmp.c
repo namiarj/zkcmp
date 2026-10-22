@@ -16,8 +16,7 @@ usage(void)
 }
 
 static int
-hash_file(const char *path, unsigned char digest[DIGEST_LEN],
-	struct zkcmp *z)
+hash_file(struct zkcmp *z, const char *file, unsigned char digest[DIGEST_LEN])
 {
 	FILE *fp;
 	unsigned char buf[IO_BUF_LEN];
@@ -26,7 +25,7 @@ hash_file(const char *path, unsigned char digest[DIGEST_LEN],
 	unsigned int digest_len;
 	int ret = -1;
 
-	fp = fopen(path, "rb");
+	fp = fopen(file, "rb");
 	if (fp == NULL)
 		return ret;
 	h = EVP_MD_CTX_new();
@@ -104,7 +103,7 @@ commit_file(struct zkcmp *z, const char *file)
 	unsigned char commitment[GROUP_LEN];
 
 	init_group(z);
-	if (hash_file(file, digest, z) != 0)
+	if (hash_file(z, file, digest) != 0)
 		err(ERR_EXIT, "failed to hash %s", file);
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
@@ -125,7 +124,7 @@ prove_file(struct zkcmp *z, const char *file)
 	unsigned char proof[GROUP_LEN * 2];
 
 	init_group(z);
-	if (hash_file(file, digest, z) != 0)
+	if (hash_file(z, file, digest) != 0)
 		err(ERR_EXIT, "failed to hash %s", file);
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
@@ -141,7 +140,7 @@ prove_file(struct zkcmp *z, const char *file)
 }
 
 int
-verify_file(struct zkcmp *z, const char *commit_path, const char *proof_path,
+verify_file(struct zkcmp *z, const char *commit_file, const char *proof_file,
 	const int silent)
 {
 	unsigned char commitment[GROUP_LEN];
@@ -151,24 +150,24 @@ verify_file(struct zkcmp *z, const char *commit_path, const char *proof_path,
 	FILE *fp;
 	int status;
 
-	fp = fopen(commit_path, "r");
+	fp = fopen(commit_file, "r");
 	if (fp == NULL)
-		err(ERR_EXIT, "failed to open %s", commit_path);
+		err(ERR_EXIT, "failed to open %s", commit_file);
 	if (fgets(commitment_buf, sizeof(commitment_buf), fp) == NULL) {
 		fclose(fp);
-		errx(ERR_EXIT, "failed to read %s", commit_path);
+		errx(ERR_EXIT, "failed to read %s", commit_file);
 	}
 	if (fclose(fp))
-		err(ERR_EXIT, "failed to close %s", commit_path);
-	fp = fopen(proof_path, "r");
+		err(ERR_EXIT, "failed to close %s", commit_file);
+	fp = fopen(proof_file, "r");
 	if (fp == NULL)
-		err(ERR_EXIT, "failed to open %s", proof_path);
+		err(ERR_EXIT, "failed to open %s", proof_file);
 	if (fgets(proof_buf, sizeof(proof_buf), fp) == NULL) {
 		fclose(fp);
-		errx(ERR_EXIT, "failed to read %s", proof_path);
+		errx(ERR_EXIT, "failed to read %s", proof_file);
 	}
 	if (fclose(fp))
-		err(ERR_EXIT, "failed to close %s", proof_path);
+		err(ERR_EXIT, "failed to close %s", proof_file);
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
