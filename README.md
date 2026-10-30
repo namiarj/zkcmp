@@ -39,7 +39,7 @@ The default hash is SHA-256. SHA3-256 or SHA512-256 can also be selected.
 ```
 zkcmp [-h sha256|sha3-256|sha512-256] -c file -o commit
 zkcmp [-h sha256|sha3-256|sha512-256] -p file -o proof
-zkcmp [-s] [-h sha256|sha3-256|sha512-256] commit proof
+zkcmp [-q] [-h sha256|sha3-256|sha512-256] commit proof
 ```
 
 ### `-c`
