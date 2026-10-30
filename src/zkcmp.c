@@ -9,9 +9,10 @@
 _Noreturn static void
 usage(void)
 {
-	fprintf(stderr,	"usage: zkcmp [-h hash] -c file\n"
-			"       zkcmp [-h hash] -p file\n"
-			"       zkcmp [-s] [-h hash] commit proof\n");
+	fprintf(stderr,	"usage: zkcmp [-h hash] [-s psk] -c file -o commit\n"
+			"       zkcmp [-h hash] [-s psk] -p file -o proof\n"
+			"       zkcmp -g psk\n"
+			"       zkcmp [-q] [-h hash] [-s psk] commit proof\n");
 	exit(ERR_EXIT);
 }
 
@@ -87,17 +88,23 @@ free_group(struct zkcmp *z)
 	BN_CTX_free(z->ctx);
 }
 
-static void
-print_base64(const unsigned char *data, const int len)
+int
+write_file(const char *file, const unsigned char *buf, const unsigned long len)
 {
-	char encoded[B64_LEN];
-	if (EVP_EncodeBlock((unsigned char *)encoded, data, len) < 0)
-		errx(ERR_EXIT, "base64 encoding failed");
-	puts(encoded);
+	FILE *fp;
+
+	fp = fopen(file, "wb");
+	if (fp == NULL)
+		err(ERR_EXIT, "failed to open %s", file);
+	if (fwrite(buf, 1, len, fp) != len)
+		err(ERR_EXIT, "failed to write %s", file);
+	if (fclose(fp) == EOF)
+		err(ERR_EXIT, "failed to close %s", file);
+	return OK_EXIT;
 }
 
 int
-commit_file(struct zkcmp *z, const char *file)
+commit_file(struct zkcmp *z, const char *file, const char *o_file)
 {
 	unsigned char digest[DIGEST_LEN];
 	unsigned char commitment[GROUP_LEN];
@@ -112,12 +119,12 @@ commit_file(struct zkcmp *z, const char *file)
 	if (commit(z, digest, commitment) != 0)
 		errx(ERR_EXIT, "commitment generation failed");
 	free_group(z);
-	print_base64(commitment, sizeof(commitment));
+	write_file(o_file, commitment, GROUP_LEN);
 	return OK_EXIT;
 }
 
 int
-prove_file(struct zkcmp *z, const char *file)
+prove_file(struct zkcmp *z, const char *file, const char *o_file)
 {
 	unsigned char digest[DIGEST_LEN];
 	unsigned char commitment[GROUP_LEN];
@@ -135,36 +142,35 @@ prove_file(struct zkcmp *z, const char *file)
 	if (prove(z, digest, commitment, proof) != 0)
 		errx(ERR_EXIT, "proof generation failed");
 	free_group(z);
-	print_base64(proof, sizeof(proof));
+	write_file(o_file, proof, GROUP_LEN * 2);
 	return OK_EXIT;
 }
 
 int
 verify_file(struct zkcmp *z, const char *commit_file, const char *proof_file,
-	const int silent)
+	const int quiet)
 {
 	unsigned char commitment[GROUP_LEN];
 	unsigned char proof[GROUP_LEN * 2];
-	char commitment_buf[B64_LEN];
-	char proof_buf[B64_LEN];
 	FILE *fp;
 	int status;
 
-	fp = fopen(commit_file, "r");
+	fp = fopen(commit_file, "rb");
 	if (fp == NULL)
 		err(ERR_EXIT, "failed to open %s", commit_file);
-	if (fgets(commitment_buf, sizeof(commitment_buf), fp) == NULL) {
+	if (fread(commitment, 1, sizeof(commitment), fp) != sizeof(commitment) || fgetc(fp) != EOF || ferror(fp)) {
 		fclose(fp);
-		errx(ERR_EXIT, "failed to read %s", commit_file);
+		errx(ERR_EXIT, "invalid file size or read error: %s", commit_file);
 	}
 	if (fclose(fp))
 		err(ERR_EXIT, "failed to close %s", commit_file);
-	fp = fopen(proof_file, "r");
+
+	fp = fopen(proof_file, "rb");
 	if (fp == NULL)
 		err(ERR_EXIT, "failed to open %s", proof_file);
-	if (fgets(proof_buf, sizeof(proof_buf), fp) == NULL) {
+	if (fread(proof, 1, sizeof(proof), fp) != sizeof(proof) || fgetc(fp) != EOF || ferror(fp)) {
 		fclose(fp);
-		errx(ERR_EXIT, "failed to read %s", proof_file);
+		errx(ERR_EXIT, "invalid file size or read error: %s", proof_file);
 	}
 	if (fclose(fp))
 		err(ERR_EXIT, "failed to close %s", proof_file);
@@ -173,17 +179,22 @@ verify_file(struct zkcmp *z, const char *commit_file, const char *proof_file,
 		err(ERR_EXIT, "pledge");
 #endif
 	init_group(z);
-	if (EVP_DecodeBlock(commitment, (unsigned char *)commitment_buf,
-		(int)strlen(commitment_buf)) != GROUP_LEN)
-			errx(ERR_EXIT, "invalid commitment");
-	if (EVP_DecodeBlock(proof, (unsigned char *)proof_buf,
-		(int)strlen(proof_buf)) != GROUP_LEN * 2)
-			errx(ERR_EXIT, "invalid proof");
 	status = verify(z, commitment, proof);
-	if (status == DIFF_EXIT && !silent)
-		warnx("commitment and proof mismatched");
 	free_group(z);
+	if (status == DIFF_EXIT && !quiet)
+		warnx("commitment and proof mismatched");
 	return status;
+}
+
+int
+gen_psk(const char *file)
+{
+	unsigned char buf[GEN_PSK_LEN];
+
+	arc4random_buf(buf, sizeof(buf));
+	write_file(file, buf, sizeof(buf));
+	explicit_bzero(buf, sizeof(buf));
+	return OK_EXIT;
 }
 
 int
@@ -193,20 +204,25 @@ main(int argc, char **argv)
 	int ch;
 	char cmd = 0;
 	const char *file;
-	int silent = 0;
+	const char *o_file = NULL;
+	int quiet = 0;
 
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
-	while ((ch = getopt(argc, argv, "c:p:h:s")) != -1) {
+	while ((ch = getopt(argc, argv, "c:p:g:o:h:q")) != -1) {
 		switch (ch) {
 		case 'c':
 		case 'p':
+		case 'g':
 			if (cmd)
 				usage();
 			cmd = ch;
 			file = optarg;
+			break;
+		case 'o':
+			o_file = optarg;
 			break;
 		case 'h':
 			if (!strcmp(optarg, "sha512-256"))
@@ -216,8 +232,8 @@ main(int argc, char **argv)
 			else if (strcmp(optarg, "sha256"))
 				usage();
 			break;
-		case 's':
-			silent = 1;
+		case 'q':
+			quiet = 1;
 			break;
 		default:
 			usage();
@@ -228,16 +244,18 @@ main(int argc, char **argv)
 	case 0:
 		switch (cmd) {
 		case 'c':
-			return commit_file(&z, file);
+			return commit_file(&z, file, o_file);
 		case 'p':
-			return prove_file(&z, file);
+			return prove_file(&z, file, o_file);
+		case 'g':
+			return gen_psk(file);
 		}
 		break;
 	case 2:
 		switch (cmd) {
 		case 0:
 			argv += optind;
-			return verify_file(&z, argv[0], argv[1], silent);
+			return verify_file(&z, argv[0], argv[1], quiet);
 		}
 	}
 	usage();

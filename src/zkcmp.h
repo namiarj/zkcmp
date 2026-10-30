@@ -9,7 +9,7 @@
 #define GROUP_LEN	384
 #define DIGEST_LEN	32
 #define IO_BUF_LEN	16384
-#define B64_LEN	8192
+#define GEN_PSK_LEN	65536
 
 struct zkcmp {
 	BIGNUM *p;
@@ -58,6 +58,3 @@ static const unsigned char prime[] = {
 int commit(struct zkcmp*, const unsigned char*, unsigned char*);
 int prove(struct zkcmp*, const unsigned char*, const unsigned char*, unsigned char*);
 int verify(struct zkcmp*, const unsigned char*, const unsigned char*);
-int commit_file(struct zkcmp*, const char*);
-int prove_file(struct zkcmp*, const char*);
-int verify_file(struct zkcmp*, const char*, const char*, const int);
