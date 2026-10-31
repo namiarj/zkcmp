@@ -114,10 +114,6 @@ zkcmp -s user.psk -P -o user.proof       # authenticate (asks once)
 zkcmp user.commit user.proof             # verify
 ```
 
-The password is stretched with PBKDF2-HMAC-SHA512 (600000 iterations), using the psk file as salt. Use the same psk for `-C` and `-P`. The KDF does not depend on `-h`, so commitments work on both FreeBSD and OpenBSD.
-
-> **Note:** anyone holding a commitment can guess passwords offline. A per-user psk and the iteration count slow this down but do not prevent it, so use long passphrases. Without `-s` the salt is empty and guesses can be precomputed across users.
-
 ## Building
 
 On FreeBSD & OpenBSD:
