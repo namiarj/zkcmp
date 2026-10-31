@@ -93,7 +93,7 @@ To prevent this, mix in a pre-shared key (psk) with `-s`. The same psk must be u
 
 ### `-g`
 
-Generates a random psk and writes it to a new file with mode `0600`. Existing files are never overwritten.
+Generates a random psk and writes it to a file.
 
 ```sh
 zkcmp -g shared.psk
