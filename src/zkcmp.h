@@ -10,6 +10,9 @@
 #define DIGEST_LEN	32
 #define IO_BUF_LEN	16384
 #define GEN_PSK_LEN	65536
+#define PW_KEY_LEN	32
+#define PW_ITER		600000
+#define PW_MAX		1024
 
 struct zkcmp {
 	BIGNUM *p;

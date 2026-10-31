@@ -1,107 +1,208 @@
-.Dd October 2, 2026
+.Dd October 31, 2026
 .Dt ZKCMP 1
 .Os
 .Sh NAME
 .Nm zkcmp
-.Nd zero-knowledge file comparison utility
+.Nd zero-knowledge file and password comparison utility
 .Sh SYNOPSIS
 .Nm
-.Cm -c
 .Op Fl h Ar hash
-.Ar file
-.Pp
+.Op Fl s Ar psk
+.Fl c Ar file
+.Fl o Ar commit
 .Nm
-.Cm -p
 .Op Fl h Ar hash
-.Ar file
-.Pp
+.Op Fl s Ar psk
+.Fl p Ar file
+.Fl o Ar proof
 .Nm
-.Op Fl s
+.Op Fl h Ar hash
+.Op Fl s Ar psk
+.Fl C
+.Fl o Ar commit
+.Nm
+.Op Fl h Ar hash
+.Op Fl s Ar psk
+.Fl P
+.Fl o Ar proof
+.Nm
+.Fl g Ar psk
+.Nm
+.Op Fl q
 .Op Fl h Ar hash
 .Ar commit
 .Ar proof
-.Pp
 .Sh DESCRIPTION
 The
 .Nm
-utility provides zero-knowledge comparison and proof operations for files.
-It allows a prover to demonstrate that a file matches a commitment without
-revealing the file's cryptographic hash.
-.Sh SUBCOMMANDS
+utility provides zero-knowledge proof and comparison operations for files and
+passwords.
+It allows a prover to demonstrate knowledge of a secret derived from a file or
+a password, without revealing the secret or the file, and without sending the
+password.
+.Pp
+A commitment is a public value derived from the secret.
+It may be published once and used to verify any number of independent proofs.
+Commitments and proofs are written as binary files.
+.Pp
+The commands are as follows:
 .Bl -tag -width Ds
-.It Cm zkcmp -c Ar file
-Generate a Base64-encoded public commitment for
-.Ar file.
-.It Cm zkcmp -p Ar file
-Generate a Base64-encoded zero-knowledge proof for
-.Ar file .
-.It Cm zkcmp Ar commit Ar proof
-Verify a zero-knowledge proof against a public commitment.
-.Sh OPTIONS
+.It Fl c Ar file
+Create a public commitment from
+.Ar file
+and write it to the file named by
+.Fl o .
+.It Fl p Ar file
+Create a zero-knowledge proof from
+.Ar file
+and write it to the file named by
+.Fl o .
+.It Fl C
+Like
+.Fl c ,
+but the secret is a password read from the terminal.
+The password is requested twice.
+.It Fl P
+Like
+.Fl p ,
+but the secret is a password read from the terminal.
+The password is requested once.
+.It Fl g Ar psk
+Generate a random pre-shared key and write it to
+.Ar psk .
+The file is created with mode 0600 and is never overwritten;
+.Nm
+fails if it already exists.
+.It Ar commit Ar proof
+Verify
+.Ar proof
+against
+.Ar commit .
+.El
+.Pp
+The options are as follows:
 .Bl -tag -width Ds
 .It Fl h Ar hash
-.Bl -tag -width Ds
-.It Ar sha256
-SHA-256 is the default.
-.It Ar sha3-256
-.It Ar sha512-256
+Select the hash algorithm used to derive the secret.
+.Ar hash
+is one of
+.Cm sha256
+(the default),
+.Cm sha3-256
+or
+.Cm sha512-256 .
+The same algorithm must be used for commitment, proof and verification.
+.It Fl o Ar file
+Write the commitment or proof to
+.Ar file .
+Required by
+.Fl c ,
+.Fl p ,
+.Fl C
+and
+.Fl P .
+.It Fl q
+Quiet mode.
+Do not print a message when verification fails; report the result through the
+exit status only.
+.It Fl s Ar psk
+Use the pre-shared key in
+.Ar psk .
+With
+.Fl c
+and
+.Fl p
+the key is hashed together with the file.
+With
+.Fl C
+and
+.Fl P
+it is used as the salt of the password key derivation function.
+The same key must be given when creating the commitment and the proof.
+It is not needed for verification.
 .El
-.El
-.Bl -tag -width Ds
-.It Fl s
-Silent mode; return exit status only.
-.El
+.Pp
+On
+.Ox ,
+.Nm
+uses
+.Xr pledge 2
+and gives up all file system access once its inputs have been read.
 .Sh PROTOCOL
-The zero-knowledge protocol is based on a Schnorr-style proof using the
-3072-bit Modular Exponentiation Group defined by RFC 3526.
-
-The file is hashed using the selected hash algorithm.
-The resulting digest is used to derive the secret value for the proof.
-The proof uses a Fiat-Shamir challenge to provide a non-interactive
-verification protocol.
-.Sh EXAMPLES
-Generate a commitment for a file:
-.Bd -literal -offset indent
-$ zkcmp -c file > commit
-.Ed
-
-Generate a proof for a file:
-.Bd -literal -offset indent
-$ zkcmp -p file > proof
-.Ed
-
-Verify a commitment and proof:
-.Bd -literal -offset indent
-$ zkcmp commit proof
-.Ed
-
-Generate a commitment and proof once and allow multiple parties to verify
-them independently:
-.Bd -literal -offset indent
-$ zkcmp -c file > commit
-$ zkcmp -p file > proof
-$ zkcmp commit proof
-$ ssh host1 'zkcmp commit proof'
-$ ssh host2 'zkcmp commit proof'
-.Ed
-
-Use SHA3-256 for proof generation:
-.Bd -literal -offset indent
-$ zkcmp -p -h sha3-256 file
-.Ed
+The zero-knowledge protocol is a Schnorr-style proof of knowledge using the
+3072-bit MODP group defined by RFC 3526.
+The proof uses a Fiat-Shamir challenge, which makes verification
+non-interactive.
+.Pp
+For
+.Fl c
+and
+.Fl p ,
+the selected hash is computed over a domain separator, the optional
+pre-shared key and the contents of the file.
+The resulting digest is the secret value of the proof.
+.Pp
+For
+.Fl C
+and
+.Fl P ,
+the password is stretched with PBKDF2-HMAC-SHA512 using 600000 iterations and
+the pre-shared key, if any, as salt.
+The derived key is then hashed with the domain separator using the selected
+hash to produce the secret value.
+The key derivation does not depend on
+.Fl h ,
+so password commitments are interchangeable between systems.
 .Sh EXIT STATUS
-.Ex
 .Bl -tag -width Ds
 .It 0
 The operation completed or the proof verified successfully.
 .It 1
-The proof did not match.
+The proof did not match the commitment.
 .It 2
-An operational error occurred.
+An error occurred.
 .El
+.Sh EXAMPLES
+Create a commitment for a file, and a proof of knowledge of it:
+.Bd -literal -offset indent
+$ zkcmp -c file -o commit
+$ zkcmp -p file -o proof
+$ zkcmp commit proof
+.Ed
+.Pp
+Publish a commitment once and let several parties prove knowledge
+independently:
+.Bd -literal -offset indent
+server$ zkcmp -c release.tar -o release.commit
+alice$  zkcmp -p release.tar -o alice.proof
+bob$    zkcmp -p release.tar -o bob.proof
+server$ zkcmp release.commit alice.proof
+server$ zkcmp release.commit bob.proof
+.Ed
+.Pp
+Use a pre-shared key so that the commitment cannot be checked against guessed
+files:
+.Bd -literal -offset indent
+$ zkcmp -g shared.psk
+$ zkcmp -s shared.psk -c file -o commit
+$ zkcmp -s shared.psk -p file -o proof
+.Ed
+.Pp
+Register and authenticate a password, using a per-user salt:
+.Bd -literal -offset indent
+$ zkcmp -g user.psk
+$ zkcmp -s user.psk -C -o user.commit
+$ zkcmp -s user.psk -P -o user.proof
+$ zkcmp user.commit user.proof
+.Ed
+.Pp
+Use SHA3-256 and check the result in a script:
+.Bd -literal -offset indent
+$ zkcmp -h sha3-256 -p file -o proof
+$ zkcmp -q -h sha3-256 commit proof && echo ok
+.Ed
 .Sh SEE ALSO
 .Xr cmp 1 ,
-.Xr ssh 1
-.Sh AUTHOR
+.Xr pledge 2
+.Sh AUTHORS
 .An Nami Arjmandi
-.El

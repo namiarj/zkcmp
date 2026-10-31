@@ -2,7 +2,7 @@
 
 **Zero-knowledge file possession and comparison utility.**
 
-`zkcmp` is a minimal Unix utility exploring whether knowledge of a file-derived secret can be demonstrated without revealing the file itself.
+`zkcmp` is a minimal Unix utility exploring whether knowledge of a file-derived or password-derived secret can be demonstrated without revealing the secret itself.
 
 ## Status
 
@@ -12,10 +12,10 @@
 
 ## How it works
 
-`zkcmp` derives a secret (hash) from a file:
+`zkcmp` derives a secret from a file, or from a password:
 
 ```text
-file
+file or password
 ↓
 hash
 ↓
@@ -34,11 +34,12 @@ The default hash is SHA-256. SHA3-256 or SHA512-256 can also be selected.
 
 ## Commands
 
-`zkcmp` provides three operations:
-
 ```
-zkcmp [-h sha256|sha3-256|sha512-256] -c file -o commit
-zkcmp [-h sha256|sha3-256|sha512-256] -p file -o proof
+zkcmp [-h sha256|sha3-256|sha512-256] [-s psk] -c file -o commit
+zkcmp [-h sha256|sha3-256|sha512-256] [-s psk] -p file -o proof
+zkcmp [-h sha256|sha3-256|sha512-256] [-s psk] -C -o commit
+zkcmp [-h sha256|sha3-256|sha512-256] [-s psk] -P -o proof
+zkcmp -g psk
 zkcmp [-q] [-h sha256|sha3-256|sha512-256] commit proof
 ```
 
@@ -68,6 +69,8 @@ Verifies a proof against a previously created commitment.
 zkcmp release.tar.commit release.tar.proof
 ```
 
+Exit status is `0` on a match and `1` on a mismatch. `-q` suppresses the mismatch message.
+
 This is useful when a commitment has been published and multiple parties need to demonstrate knowledge of the corresponding secret.
 
 For example:
@@ -82,6 +85,39 @@ server$ zkcmp release.tar.commit alice.proof
 server$ zkcmp release.tar.commit bob.proof
 ```
 
+## Pre-shared key
+
+A commitment is a deterministic function of the file. Anyone who can guess or obtain the file can compute the same commitment and check their guess against it.
+
+To prevent this, mix in a pre-shared key (psk) with `-s`. The same psk must be used when committing and proving.
+
+### `-g`
+
+Generates a random psk and writes it to a new file with mode `0600`. Existing files are never overwritten.
+
+```sh
+zkcmp -g shared.psk
+zkcmp -s shared.psk -c release.tar -o release.tar.commit
+zkcmp -s shared.psk -p release.tar -o alice.proof
+```
+
+Verification does not need the psk.
+
+## Password mode
+
+`-C` and `-P` work like `-c` and `-p`, but the secret is a password typed at the terminal instead of a file. This allows a password to be proven without being sent to the verifier.
+
+```sh
+zkcmp -g user.psk
+zkcmp -s user.psk -C -o user.commit     # register (asks twice)
+zkcmp -s user.psk -P -o user.proof      # authenticate (asks once)
+zkcmp user.commit user.proof            # verify
+```
+
+The password is stretched with PBKDF2-HMAC-SHA512 (600000 iterations) before it is hashed. In this mode the psk file is used as the KDF salt, so use the same psk for `-C` and `-P`, and generate a different one per user. The KDF is fixed regardless of `-h`, so commitments are portable between FreeBSD and OpenBSD.
+
+Anyone who holds a commitment can still guess passwords offline. The iteration count and a per-user salt slow this down but do not prevent it, so use long passphrases. Without `-s`, the salt is empty and guesses can be precomputed across users.
+
 ## Building
 
 On FreeBSD & OpenBSD:
@@ -90,6 +126,8 @@ On FreeBSD & OpenBSD:
 make
 make install
 ```
+
+On OpenBSD, `zkcmp` uses `pledge(2)` and drops all file access after reading its inputs.
 
 ## License
 
