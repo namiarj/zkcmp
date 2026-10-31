@@ -105,18 +105,18 @@ Verification does not need the psk.
 
 ## Password mode
 
-`-C` and `-P` work like `-c` and `-p`, but the secret is a password typed at the terminal instead of a file. This allows a password to be proven without being sent to the verifier.
+`-C` and `-P` work like `-c` and `-p`, but the secret is a password typed at the terminal instead of a file. The password is proven without ever being sent to the verifier.
 
 ```sh
-zkcmp -g user.psk
-zkcmp -s user.psk -C -o user.commit     # register (asks twice)
-zkcmp -s user.psk -P -o user.proof      # authenticate (asks once)
-zkcmp user.commit user.proof            # verify
+zkcmp -g user.psk                        # one salt per user
+zkcmp -s user.psk -C -o user.commit      # register (asks twice)
+zkcmp -s user.psk -P -o user.proof       # authenticate (asks once)
+zkcmp user.commit user.proof             # verify
 ```
 
-The password is stretched with PBKDF2-HMAC-SHA512 (600000 iterations) before it is hashed. In this mode the psk file is used as the KDF salt, so use the same psk for `-C` and `-P`, and generate a different one per user. The KDF is fixed regardless of `-h`, so commitments are portable between FreeBSD and OpenBSD.
+The password is stretched with PBKDF2-HMAC-SHA512 (600000 iterations), using the psk file as salt. Use the same psk for `-C` and `-P`. The KDF does not depend on `-h`, so commitments work on both FreeBSD and OpenBSD.
 
-Anyone who holds a commitment can still guess passwords offline. The iteration count and a per-user salt slow this down but do not prevent it, so use long passphrases. Without `-s`, the salt is empty and guesses can be precomputed across users.
+> **Note:** anyone holding a commitment can guess passwords offline. A per-user psk and the iteration count slow this down but do not prevent it, so use long passphrases. Without `-s` the salt is empty and guesses can be precomputed across users.
 
 ## Building
 
