@@ -9,7 +9,7 @@
 #define GROUP_LEN	384
 #define DIGEST_LEN	32
 #define IO_BUF_LEN	16384
-#define PSK_LEN		65536
+#define PSK_LEN		32
 #define PW_ITER		600000
 #define PW_MAX		1024
 
