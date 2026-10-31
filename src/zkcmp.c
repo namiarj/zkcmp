@@ -19,117 +19,108 @@ usage(void)
 			"       zkcmp [-q] [-h hash] commit proof\n");
 	exit(ERR_EXIT);
 }
-
+ 
 static void
-lock(void)
+require(int ok, const char *what)
 {
-#ifdef __OpenBSD__
-	if (pledge("stdio", NULL) == -1)
-		err(ERR_EXIT, "pledge");
-#endif
+	if (!ok)
+		errx(ERR_EXIT, "%s failed", what);
 }
-
+ 
 static FILE *
-open_out(const char *file, int secret)
+create_file(const char *file, int excl)
 {
 	FILE *fp;
 	int fd;
-
-	fd = open(file, O_WRONLY | O_CREAT | (secret ? O_EXCL : O_TRUNC),
-	    secret ? 0600 : 0666);
+ 
+	fd = open(file, O_WRONLY | O_CREAT | (excl ? O_EXCL : O_TRUNC),
+	    excl ? 0600 : 0666);
 	if (fd == -1 || (fp = fdopen(fd, "wb")) == NULL)
 		err(ERR_EXIT, "failed to open %s", file);
 	return fp;
 }
-
+ 
 static void
-write_out(FILE *fp, const char *file, const void *buf, size_t len)
+write_file(FILE *fp, const char *file, const void *buf, size_t len)
 {
 	if (fwrite(buf, 1, len, fp) != len || fclose(fp))
 		err(ERR_EXIT, "failed to write %s", file);
 }
-
+ 
 static void
-read_exact(const char *file, void *buf, size_t len)
+read_file(const char *file, void *buf, size_t len)
 {
 	FILE *fp;
-
+ 
 	if ((fp = fopen(file, "rb")) == NULL)
 		err(ERR_EXIT, "failed to open %s", file);
 	if (fread(buf, 1, len, fp) != len || fgetc(fp) != EOF || ferror(fp))
 		errx(ERR_EXIT, "invalid file size or read error: %s", file);
 	fclose(fp);
 }
-
+ 
 static void
 read_password(unsigned char key[PW_KEY_LEN], const char *s_file, int confirm)
 {
 	unsigned char salt[GEN_PSK_LEN];
 	char pw[PW_MAX], pw2[PW_MAX];
-	int ok;
-
+ 
 	if (s_file)
-		read_exact(s_file, salt, sizeof(salt));
-	ok = readpassphrase("Password: ", pw, sizeof(pw), RPP_ECHO_OFF) != NULL &&
-	    pw[0] != '\0';
-	if (ok && confirm)
-		ok = readpassphrase("Confirm password: ", pw2, sizeof(pw2),
-		    RPP_ECHO_OFF) != NULL && strcmp(pw, pw2) == 0;
-	ok = ok && PKCS5_PBKDF2_HMAC(pw, strlen(pw), salt,
-	    s_file ? sizeof(salt) : 0, PW_ITER, EVP_sha512(), PW_KEY_LEN,
-	    key) == 1;
+		read_file(s_file, salt, sizeof(salt));
+	require(readpassphrase("Password: ", pw, sizeof(pw), RPP_ECHO_OFF) &&
+	    *pw, "password input");
+	require(!confirm || (readpassphrase("Confirm password: ", pw2,
+	    sizeof(pw2), RPP_ECHO_OFF) && !strcmp(pw, pw2)),
+	    "password confirmation");
+	require(PKCS5_PBKDF2_HMAC(pw, strlen(pw), salt,
+	    s_file ? sizeof(salt) : 0, PW_ITER, EVP_sha512(), PW_KEY_LEN, key),
+	    "key derivation");
 	explicit_bzero(pw, sizeof(pw));
 	explicit_bzero(pw2, sizeof(pw2));
-	if (!ok)
-		errx(ERR_EXIT, "password input or derivation failed");
 }
-
-static int
-hash_path(EVP_MD_CTX *h, const char *path)
+ 
+static void
+hash_file(EVP_MD_CTX *h, const char *file)
 {
 	unsigned char buf[IO_BUF_LEN];
 	FILE *fp;
-	size_t n;
-	int ok = 1;
-
-	if ((fp = fopen(path, "rb")) == NULL)
-		return -1;
-	while (ok && (n = fread(buf, 1, sizeof(buf), fp)) != 0)
-		ok = EVP_DigestUpdate(h, buf, n);
-	ok = ok && !ferror(fp);
+	size_t len;
+ 
+	if ((fp = fopen(file, "rb")) == NULL)
+		err(ERR_EXIT, "failed to open %s", file);
+	while ((len = fread(buf, 1, sizeof(buf), fp)) != 0)
+		require(EVP_DigestUpdate(h, buf, len), "hashing");
+	if (ferror(fp))
+		errx(ERR_EXIT, "read error: %s", file);
 	explicit_bzero(buf, sizeof(buf));
-	if (fclose(fp))
-		ok = 0;
-	return ok ? 0 : -1;
+	fclose(fp);
 }
-
+ 
 static void
-get_digest(const struct zkcmp *z, const char *file, const char *s_file,
+derive_digest(const struct zkcmp *z, const char *file, const char *s_file,
 	int confirm, unsigned char digest[DIGEST_LEN])
 {
 	unsigned char key[PW_KEY_LEN];
-	EVP_MD_CTX *h;
-	unsigned int len;
-	int ok;
-
-	if (file == NULL) {
+	EVP_MD_CTX *h = EVP_MD_CTX_new();
+	unsigned int digest_len;
+ 
+	require(h && EVP_DigestInit_ex(h, z->h, NULL) &&
+	    EVP_DigestUpdate(h, DOMAIN_SEPARATOR, sizeof(DOMAIN_SEPARATOR)),
+	    "hashing");
+	if (file) {
+		if (s_file)
+			hash_file(h, s_file);
+		hash_file(h, file);
+	} else {
 		read_password(key, s_file, confirm);
-		s_file = NULL;
+		require(EVP_DigestUpdate(h, key, sizeof(key)), "hashing");
+		explicit_bzero(key, sizeof(key));
 	}
-	if ((h = EVP_MD_CTX_new()) == NULL)
-		errx(ERR_EXIT, "OpenSSL allocation failed");
-	ok = EVP_DigestInit_ex(h, z->h, NULL) == 1 &&
-	    EVP_DigestUpdate(h, DOMAIN_SEPARATOR, sizeof(DOMAIN_SEPARATOR)) == 1 &&
-	    (file != NULL || EVP_DigestUpdate(h, key, sizeof(key)) == 1) &&
-	    (s_file == NULL || hash_path(h, s_file) == 0) &&
-	    (file == NULL || hash_path(h, file) == 0) &&
-	    EVP_DigestFinal_ex(h, digest, &len) == 1 && len == DIGEST_LEN;
+	require(EVP_DigestFinal_ex(h, digest, &digest_len) &&
+	    digest_len == DIGEST_LEN, "hashing");
 	EVP_MD_CTX_free(h);
-	explicit_bzero(key, sizeof(key));
-	if (!ok)
-		err(ERR_EXIT, "failed to hash %s", file ? file : "password");
 }
-
+ 
 static void
 init_group(struct zkcmp *z)
 {
@@ -137,88 +128,94 @@ init_group(struct zkcmp *z)
 	z->g = BN_new();
 	z->p = BN_bin2bn(prime, sizeof(prime), NULL);
 	z->q = BN_dup(z->p);
-	if (z->ctx == NULL || z->g == NULL || z->p == NULL || z->q == NULL)
-		errx(ERR_EXIT, "OpenSSL allocation failed");
-	if (BN_sub_word(z->q, 1) != 1 || BN_rshift1(z->q, z->q) != 1 ||
-	    BN_set_word(z->g, 2) != 1)
-		errx(ERR_EXIT, "group initialization failed");
+	require(z->ctx && z->g && z->p && z->q && BN_sub_word(z->q, 1) &&
+	    BN_rshift1(z->q, z->q) && BN_set_word(z->g, 2), "group setup");
 }
-
+ 
 static int
-commit_file(struct zkcmp *z, const char *file, const char *o_file,
+gen_commit(struct zkcmp *z, const char *file, const char *o_file,
 	const char *s_file)
 {
 	unsigned char digest[DIGEST_LEN], commitment[GROUP_LEN];
 	FILE *fp;
-
+ 
 	init_group(z);
-	get_digest(z, file, s_file, 1, digest);
-	fp = open_out(o_file, 0);
-	lock();
-	if (commit(z, digest, commitment) != 0)
-		errx(ERR_EXIT, "commitment generation failed");
+	derive_digest(z, file, s_file, 1, digest);
+	fp = create_file(o_file, 0);
+#ifdef __OpenBSD__
+	if (pledge("stdio", NULL) == -1)
+		err(ERR_EXIT, "pledge");
+#endif
+	require(commit(z, digest, commitment) == 0, "commitment generation");
 	explicit_bzero(digest, sizeof(digest));
-	write_out(fp, o_file, commitment, sizeof(commitment));
+	write_file(fp, o_file, commitment, sizeof(commitment));
 	return OK_EXIT;
 }
-
+ 
 static int
-prove_file(struct zkcmp *z, const char *file, const char *o_file,
+gen_proof(struct zkcmp *z, const char *file, const char *o_file,
 	const char *s_file)
 {
 	unsigned char digest[DIGEST_LEN], commitment[GROUP_LEN];
 	unsigned char proof[GROUP_LEN * 2];
 	FILE *fp;
-
+ 
 	init_group(z);
-	get_digest(z, file, s_file, 0, digest);
-	fp = open_out(o_file, 0);
-	lock();
-	if (commit(z, digest, commitment) != 0)
-		errx(ERR_EXIT, "commitment generation failed");
-	if (prove(z, digest, commitment, proof) != 0)
-		errx(ERR_EXIT, "proof generation failed");
+	derive_digest(z, file, s_file, 0, digest);
+	fp = create_file(o_file, 0);
+#ifdef __OpenBSD__
+	if (pledge("stdio", NULL) == -1)
+		err(ERR_EXIT, "pledge");
+#endif
+	require(commit(z, digest, commitment) == 0, "commitment generation");
+	require(prove(z, digest, commitment, proof) == 0, "proof generation");
 	explicit_bzero(digest, sizeof(digest));
-	write_out(fp, o_file, proof, sizeof(proof));
+	write_file(fp, o_file, proof, sizeof(proof));
 	return OK_EXIT;
 }
-
+ 
 static int
-verify_file(struct zkcmp *z, const char *c_file, const char *p_file, int quiet)
+verify_proof(struct zkcmp *z, const char *c_file, const char *p_file, int quiet)
 {
 	unsigned char commitment[GROUP_LEN], proof[GROUP_LEN * 2];
 	int status;
-
-	read_exact(c_file, commitment, sizeof(commitment));
-	read_exact(p_file, proof, sizeof(proof));
-	lock();
+ 
+	read_file(c_file, commitment, sizeof(commitment));
+	read_file(p_file, proof, sizeof(proof));
+#ifdef __OpenBSD__
+	if (pledge("stdio", NULL) == -1)
+		err(ERR_EXIT, "pledge");
+#endif
 	init_group(z);
 	status = verify(z, commitment, proof);
 	if (status == DIFF_EXIT && !quiet)
 		warnx("commitment and proof mismatched");
 	return status;
 }
-
+ 
 static int
 gen_psk(const char *file)
 {
 	unsigned char buf[GEN_PSK_LEN];
-	FILE *fp = open_out(file, 1);
-
-	lock();
+	FILE *fp = create_file(file, 1);
+ 
+#ifdef __OpenBSD__
+	if (pledge("stdio", NULL) == -1)
+		err(ERR_EXIT, "pledge");
+#endif
 	arc4random_buf(buf, sizeof(buf));
-	write_out(fp, file, buf, sizeof(buf));
+	write_file(fp, file, buf, sizeof(buf));
 	explicit_bzero(buf, sizeof(buf));
 	return OK_EXIT;
 }
-
+ 
 int
 main(int argc, char **argv)
 {
 	struct zkcmp z = { .h = EVP_sha256() };
 	const char *file = NULL, *s_file = NULL, *o_file = NULL;
 	int ch, cmd = 0, quiet = 0;
-
+ 
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath wpath cpath tty", NULL) == -1)
 		err(ERR_EXIT, "pledge");
@@ -267,12 +264,12 @@ main(int argc, char **argv)
 		case 'c':
 		case 'C':
 			if (o_file)
-				return commit_file(&z, file, o_file, s_file);
+				return gen_commit(&z, file, o_file, s_file);
 			break;
 		case 'p':
 		case 'P':
 			if (o_file)
-				return prove_file(&z, file, o_file, s_file);
+				return gen_proof(&z, file, o_file, s_file);
 			break;
 		case 'g':
 			return gen_psk(file);
@@ -282,7 +279,7 @@ main(int argc, char **argv)
 		switch (cmd) {
 		case 0:
 			argv += optind;
-			return verify_file(&z, argv[0], argv[1], quiet);
+			return verify_proof(&z, argv[0], argv[1], quiet);
 		}
 	}
 	usage();
