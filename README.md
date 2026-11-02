@@ -35,11 +35,11 @@ The default hash is SHA-256. SHA3-256 or SHA512-256 can also be selected.
 ## Commands
 
 ```
-zkcmp [-h sha256|sha3-256|sha512-256] [-s psk] -c file -o commit
-zkcmp [-h sha256|sha3-256|sha512-256] [-s psk] -p file -o proof
-zkcmp [-h sha256|sha3-256|sha512-256] [-s psk] -C -o commit
-zkcmp [-h sha256|sha3-256|sha512-256] [-s psk] -P -o proof
-zkcmp -g psk
+zkcmp [-h sha256|sha3-256|sha512-256] [-s salt] -c file -o commit
+zkcmp [-h sha256|sha3-256|sha512-256] [-s salt] -p file -o proof
+zkcmp [-h sha256|sha3-256|sha512-256] [-s salt] -C -o commit
+zkcmp [-h sha256|sha3-256|sha512-256] [-s salt] -P -o proof
+zkcmp -g salt
 zkcmp [-q] [-h sha256|sha3-256|sha512-256] commit proof
 ```
 
@@ -85,32 +85,32 @@ server$ zkcmp release.tar.commit alice.proof
 server$ zkcmp release.tar.commit bob.proof
 ```
 
-## Pre-shared key
+## Private Salt
 
 A commitment is a deterministic function of the file. Anyone who can guess or obtain the file can compute the same commitment and check their guess against it.
 
-To prevent this, mix in a pre-shared key (psk) with `-s`. The same psk must be used when committing and proving.
+To prevent this, mix in a private salt with `-s`. The same private salt must be used when committing and proving.
 
 ### `-g`
 
-Generates a random psk and writes it to a file.
+Generates a random 32 byte salt and writes it to a file.
 
 ```sh
-zkcmp -g shared.psk
-zkcmp -s shared.psk -c release.tar -o release.tar.commit
-zkcmp -s shared.psk -p release.tar -o alice.proof
+zkcmp -g shared.salt
+zkcmp -s shared.salt -c release.tar -o release.tar.commit
+zkcmp -s shared.salt -p release.tar -o alice.proof
 ```
 
-Verification does not need the psk.
+Verification does not need the salt.
 
 ## Password mode
 
 `-C` and `-P` work like `-c` and `-p`, but the secret is a password typed at the terminal instead of a file. The password is proven without ever being sent to the verifier.
 
 ```sh
-zkcmp -g user.psk                        # one salt per user
-zkcmp -s user.psk -C -o user.commit      # register (asks twice)
-zkcmp -s user.psk -P -o user.proof       # authenticate (asks once)
+zkcmp -g user.salt                        # one salt per user
+zkcmp -s user.salt -C -o user.commit      # register (asks twice)
+zkcmp -s user.salt -P -o user.proof       # authenticate (asks once)
 zkcmp user.commit user.proof             # verify
 ```
 
