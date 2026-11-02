@@ -11,11 +11,11 @@
 _Noreturn static void
 usage(void)
 {
-	fprintf(stderr, "usage: zkcmp [-h hash] [-s psk] -c file -o commit\n"
-			"       zkcmp [-h hash] [-s psk] -p file -o proof\n"
-			"       zkcmp [-h hash] [-s psk] -C -o commit\n"
-			"       zkcmp [-h hash] [-s psk] -P -o proof\n"
-			"       zkcmp -g psk\n"
+	fprintf(stderr, "usage: zkcmp [-h hash] [-s salt] -c file -o commit\n"
+			"       zkcmp [-h hash] [-s salt] -p file -o proof\n"
+			"       zkcmp [-h hash] [-s salt] -C -o commit\n"
+			"       zkcmp [-h hash] [-s salt] -P -o proof\n"
+			"       zkcmp -g salt\n"
 			"       zkcmp [-q] [-h hash] commit proof\n");
 	exit(ERR_EXIT);
 }
@@ -61,7 +61,7 @@ read_file(const char *file, void *buf, size_t len)
 static void
 read_password(unsigned char key[DIGEST_LEN], const char *s_file, int confirm)
 {
-	unsigned char salt[PSK_LEN];
+	unsigned char salt[DIGEST_LEN];
 	char pw[PW_MAX], pw2[PW_MAX];
  
 	if (s_file)
@@ -193,9 +193,9 @@ verify_proof(struct zkcmp *z, const char *c_file, const char *p_file, int quiet)
 }
  
 static int
-gen_psk(const char *file)
+gen_salt(const char *file)
 {
-	unsigned char buf[PSK_LEN];
+	unsigned char buf[DIGEST_LEN];
 	FILE *fp = create_file(file);
  
 #ifdef __OpenBSD__
@@ -271,7 +271,7 @@ main(int argc, char **argv)
 				return gen_proof(&z, file, o_file, s_file);
 			break;
 		case 'g':
-			return gen_psk(file);
+			return gen_salt(file);
 		}
 		break;
 	case 2:

@@ -68,7 +68,7 @@ Like
 but the secret is a password read from the terminal.
 The password is requested once.
 .It Fl g Ar psk
-Generate a random pre-shared key and write it to
+Generate a random 32 byte private salt and write it to
 .Ar psk .
 The file is created with mode 0600 and is never overwritten;
 .Nm
@@ -106,7 +106,7 @@ Quiet mode.
 Do not print a message when verification fails; report the result through the
 exit status only.
 .It Fl s Ar psk
-Use the pre-shared key in
+Use the prrivate salt in
 .Ar psk .
 With
 .Fl c
@@ -139,7 +139,7 @@ For
 and
 .Fl p ,
 the selected hash is computed over a domain separator, the optional
-pre-shared key and the contents of the file.
+private salt and the contents of the file.
 The resulting digest is the secret value of the proof.
 .Pp
 For
@@ -147,7 +147,7 @@ For
 and
 .Fl P ,
 the password is stretched with PBKDF2-HMAC-SHA512 using 600000 iterations and
-the pre-shared key, if any, as salt.
+the salt.
 The derived key is then hashed with the domain separator using the selected
 hash to produce the secret value.
 The key derivation does not depend on
@@ -180,7 +180,7 @@ server$ zkcmp release.commit alice.proof
 server$ zkcmp release.commit bob.proof
 .Ed
 .Pp
-Use a pre-shared key so that the commitment cannot be checked against guessed
+Use a private salt so that the commitment cannot be checked against guessed
 files:
 .Bd -literal -offset indent
 $ zkcmp -g shared.psk
