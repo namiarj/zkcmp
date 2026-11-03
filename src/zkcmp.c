@@ -269,7 +269,6 @@ main(int argc, char **argv)
 		case 'p':
 		case 'g':
 			file = optarg;
-			/* FALLTHROUGH */
 		case 'C':
 		case 'P':
 			if (cmd)
@@ -312,18 +311,16 @@ main(int argc, char **argv)
 		switch (cmd) {
 		case 'c':
 		case 'C':
-			if (o && t == 0) {
+			if (o && !t)
 				return gen_commit(&z, file, s, o);
-			}
 			break;
 		case 'p':
 		case 'P':
-			if (o) {
+			if (o)
 				return gen_proof(&z, file, s, o, t);
-			}
 			break;
 		case 'g':
-			if (t == 0)
+			if (!t)
 				return gen_salt(file);
 			break;
 		}
