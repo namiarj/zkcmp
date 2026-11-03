@@ -209,7 +209,7 @@ gen_proof(struct zkcmp *z, const char *file, const char *s,
 
 static int
 verify_proof(struct zkcmp *z, const char *c, const char *p,
-    uint64_t s, int q)
+    uint64_t t, int q)
 {
 	unsigned char commitment[GROUP_LEN], proof[PROOF_LEN];
 	int status;
@@ -224,7 +224,7 @@ verify_proof(struct zkcmp *z, const char *c, const char *p,
 		err(ERR_EXIT, "pledge");
 #endif
 	init_group(z);
-	z->window = s ? window_of(time(NULL), s) : 0;
+	z->window = t ? window_of(time(NULL), t) : 0;
 	status = verify(z, commitment, proof);
 	if (status != OK_EXIT && z->window > 1) {
 		z->window--;
