@@ -230,8 +230,12 @@ verify_proof(struct zkcmp *z, const char *c, const char *p,
 		z->window--;
 		status = verify(z, commitment, proof);
 	}
-	if (status != OK_EXIT && !q)
-		warnx("commitment and proof mismatched, or proof expired");
+	if (status != OK_EXIT && !q) {
+		if (t)
+			warnx("commitment and proof mismatched, or proof expired");
+		else
+			warnx("commitment and proof mismatched");
+	}
 	return status;
 }
 
