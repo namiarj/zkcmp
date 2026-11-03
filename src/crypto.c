@@ -99,7 +99,6 @@ verify(struct zkcmp *z, const unsigned char commitment[GROUP_LEN],
 	    BN_mod_exp(rhs, y, c, z->p, z->ctx) == 1 &&
 	    BN_mod_mul(rhs, rhs, r, z->p, z->ctx) == 1)
 		ret = BN_cmp(lhs, rhs) == 0 ? OK_EXIT : DIFF_EXIT;
-
 	BN_free(y);
 	BN_free(r);
 	BN_free(s);
