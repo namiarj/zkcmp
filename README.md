@@ -1,15 +1,15 @@
 # zkcmp
 
-**Zero-knowledge file possession and comparison utility.**
+**Zero-knowledge file and password comparison utility.**
 
-`zkcmp` is a minimal Unix utility exploring whether knowledge of a file-derived or password-derived secret can be demonstrated without revealing the secret itself.
+`zkcmp` is a minimal, high-performance Unix utility designed for deterministic zero-knowledge file and password comparison.
 
 ## How it works
 
 `zkcmp` derives a secret from a file, or from a password:
 
 ```text
-file or password (mixed with optional salt)
+file or password (optional salt)
 ↓
 hash
 ↓
@@ -17,8 +17,6 @@ commitment
 ↓
 zero-knowledge proof
 ```
-
-The proof is constructed so that the secret itself does not need to be transmitted.
 
 The current implementation uses a Schnorr-style proof of knowledge over the 3072-bit MODP group from RFC 3526. The proof is non-interactive, using the Fiat-Shamir transform.
 
@@ -100,19 +98,11 @@ To prevent this, mix in a private salt with `-s`. The same private salt must be 
 
 ### `-g`
 
-Generates a random 32 byte salt and writes it to a file. The file is created with mode `0600`.
-
-```sh
-zkcmp -g shared.salt
-zkcmp -s shared.salt -c release.tar -o release.tar.commit
-zkcmp -s shared.salt -p release.tar -o alice.proof
-```
-
-Verification does not need the salt.
+Generates a random 32 byte salt and writes it to a file. The file is created with mode `0600`. Verification does not need the salt.
 
 ## Password mode
 
-`-C` and `-P` work like `-c` and `-p`, but the secret is a password typed at the terminal instead of a file. The password is proven without ever being sent to the verifier.
+`-C` and `-P` work like `-c` and `-p`, but the secret is a password typed at the terminal instead of a file. Using a private salt for low-entropy passwords significantly hardens against brute-force or dictionary attacks on commits and proofs.
 
 ```sh
 zkcmp -g user.salt                        # one salt per user
