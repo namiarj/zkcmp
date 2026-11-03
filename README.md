@@ -4,12 +4,6 @@
 
 `zkcmp` is a minimal Unix utility exploring whether knowledge of a file-derived or password-derived secret can be demonstrated without revealing the secret itself.
 
-## Status
-
-> **Experimental / exploratory software.**
->
-> The protocol and implementation are still evolving. Do not rely on `zkcmp` for security-critical applications, authentication, or protection of valuable secrets.
-
 ## How it works
 
 `zkcmp` derives a secret from a file, or from a password:
