@@ -1,4 +1,4 @@
-.Dd October 31, 2026
+.Dd November 3, 2026
 .Dt ZKCMP 1
 .Os
 .Sh NAME
@@ -7,29 +7,32 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl h Ar hash
-.Op Fl s Ar psk
+.Op Fl s Ar salt
 .Fl c Ar file
 .Fl o Ar commit
 .Nm
 .Op Fl h Ar hash
-.Op Fl s Ar psk
+.Op Fl s Ar salt
 .Fl p Ar file
+.Op Fl t Ar seconds
 .Fl o Ar proof
 .Nm
 .Op Fl h Ar hash
-.Op Fl s Ar psk
+.Op Fl s Ar salt
 .Fl C
 .Fl o Ar commit
 .Nm
 .Op Fl h Ar hash
-.Op Fl s Ar psk
+.Op Fl s Ar salt
 .Fl P
+.Op Fl t Ar seconds
 .Fl o Ar proof
 .Nm
-.Fl g Ar psk
+.Fl g Ar salt
 .Nm
 .Op Fl q
 .Op Fl h Ar hash
+.Op Fl t Ar seconds
 .Ar commit
 .Ar proof
 .Sh DESCRIPTION
@@ -67,12 +70,10 @@ Like
 .Fl p ,
 but the secret is a password read from the terminal.
 The password is requested once.
-.It Fl g Ar psk
+.It Fl g Ar salt
 Generate a random 32 byte private salt and write it to
-.Ar psk .
-The file is created with mode 0600 and is never overwritten;
-.Nm
-fails if it already exists.
+.Ar salt .
+The file is created with mode 0600.
 .It Ar commit Ar proof
 Verify
 .Ar proof
@@ -83,7 +84,7 @@ against
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl h Ar hash
-Select the hash algorithm used to derive the secret.
+Select the hash algorithm used to derive the secret and the challenge.
 .Ar hash
 is one of
 .Cm sha256
@@ -105,21 +106,47 @@ and
 Quiet mode.
 Do not print a message when verification fails; report the result through the
 exit status only.
-.It Fl s Ar psk
-Use the prrivate salt in
-.Ar psk .
+.It Fl s Ar salt
+Use the private salt in
+.Ar salt .
 With
 .Fl c
 and
 .Fl p
-the key is hashed together with the file.
+the salt is hashed together with the file.
 With
 .Fl C
 and
 .Fl P
 it is used as the salt of the password key derivation function.
-The same key must be given when creating the commitment and the proof.
+The same salt must be given when creating the commitment and the proof.
 It is not needed for verification.
+.It Fl t Ar seconds
+Bind the proof to a time window of
+.Ar seconds
+seconds.
+With
+.Fl p
+and
+.Fl P ,
+the clock is divided into windows of that length, and the index of the window
+in which the proof is created is hashed into the challenge.
+The proof is accepted during its own window and the following one, so it stays
+valid for at least
+.Ar seconds
+and at most twice that.
+With verification,
+.Ar seconds
+must be the same value given to the prover.
+A proof made with
+.Fl t
+does not verify without it, and a proof made without it does not verify with it.
+.Fl t
+is not accepted with
+.Fl c ,
+.Fl C
+or
+.Fl g .
 .El
 .Pp
 On
@@ -133,6 +160,14 @@ The zero-knowledge protocol is a Schnorr-style proof of knowledge using the
 3072-bit MODP group defined by RFC 3526.
 The proof uses a Fiat-Shamir challenge, which makes verification
 non-interactive.
+The commitment is Y = g^x mod p, where x is the secret value reduced modulo
+the group order.
+The challenge is c = H(Y || R [|| window]) mod q, where R = g^k mod p for a
+random k, H is the selected hash, and the window is included only when
+.Fl t
+is used.
+The response is s = k + c*x mod q.
+The verifier accepts when g^s == R * Y^c mod p.
 .Pp
 For
 .Fl c
@@ -158,7 +193,7 @@ so password commitments are interchangeable between systems.
 .It 0
 The operation completed or the proof verified successfully.
 .It 1
-The proof did not match the commitment.
+The proof did not match the commitment, or the proof has expired.
 .It 2
 An error occurred.
 .El
@@ -180,19 +215,25 @@ server$ zkcmp release.commit alice.proof
 server$ zkcmp release.commit bob.proof
 .Ed
 .Pp
+Create a proof valid for at least one hour, and verify it within that time:
+.Bd -literal -offset indent
+prover$   zkcmp -p file -t 3600 -o proof
+server$   zkcmp -t 3600 commit proof
+.Ed
+.Pp
 Use a private salt so that the commitment cannot be checked against guessed
 files:
 .Bd -literal -offset indent
-$ zkcmp -g shared.psk
-$ zkcmp -s shared.psk -c file -o commit
-$ zkcmp -s shared.psk -p file -o proof
+$ zkcmp -g shared.salt
+$ zkcmp -s shared.salt -c file -o commit
+$ zkcmp -s shared.salt -p file -o proof
 .Ed
 .Pp
 Register and authenticate a password, using a per-user salt:
 .Bd -literal -offset indent
-$ zkcmp -g user.psk
-$ zkcmp -s user.psk -C -o user.commit
-$ zkcmp -s user.psk -P -o user.proof
+$ zkcmp -g user.salt
+$ zkcmp -s user.salt -C -o user.commit
+$ zkcmp -s user.salt -P -o user.proof
 $ zkcmp user.commit user.proof
 .Ed
 .Pp
