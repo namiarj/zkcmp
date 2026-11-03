@@ -3,7 +3,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -13,6 +12,7 @@
 #include <bsd/stdlib.h>
 #else
 #include <readpassphrase.h>
+#include <stdlib.h>
 #endif
 
 #include "zkcmp.h"
@@ -37,24 +37,24 @@ guard(int ok, const char *what)
 }
 
 static uint64_t
-parse_u64(const char *s)
+parse_u64(const char *t)
 {
 	char *end;
 	unsigned long long v;
 
-	if (!isdigit((unsigned char)*s))
-		errx(ERR_EXIT, "invalid number: %s", s);
+	if (!isdigit((unsigned char)*t))
+		errx(ERR_EXIT, "invalid number: %s", t);
 	errno = 0;
-	v = strtoull(s, &end, 10);
+	v = strtoull(t, &end, 10);
 	if (errno || *end != '\0' || v == 0)
-		errx(ERR_EXIT, "invalid number: %s", s);
+		errx(ERR_EXIT, "invalid number: %s", t);
 	return (uint64_t)v;
 }
 
 static uint64_t
-window_of(time_t now, uint64_t secs)
+window_of(time_t now, uint64_t t)
 {
-	return (uint64_t)now / secs + 1;
+	return (uint64_t)now / t + 1;
 }
 
 static FILE *
@@ -186,7 +186,7 @@ gen_commit(struct zkcmp *z, const char *file, const char *s,
 
 static int
 gen_proof(struct zkcmp *z, const char *file, const char *s,
-    const char *o, uint64_t valid_secs)
+    const char *o, uint64_t t)
 {
 	unsigned char digest[DIGEST_LEN], commitment[GROUP_LEN];
 	unsigned char proof[PROOF_LEN];
@@ -199,7 +199,7 @@ gen_proof(struct zkcmp *z, const char *file, const char *s,
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
-	z->window = valid_secs ? window_of(time(NULL), valid_secs) : 0;
+	z->window = t ? window_of(time(NULL), t) : 0;
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
 	guard(prove(z, digest, commitment, proof) == 0, "proof generation");
 	explicit_bzero(digest, sizeof(digest));
@@ -208,29 +208,29 @@ gen_proof(struct zkcmp *z, const char *file, const char *s,
 }
 
 static int
-verify_proof(struct zkcmp *z, const char *c_file, const char *p_file,
-    uint64_t valid_secs, int quiet)
+verify_proof(struct zkcmp *z, const char *c, const char *p,
+    uint64_t s, int q)
 {
 	unsigned char commitment[GROUP_LEN], proof[PROOF_LEN];
 	int status;
 
-	if (read_file(c_file, commitment, GROUP_LEN) != GROUP_LEN)
-		errx(ERR_EXIT, "invalid commitment size: %s", c_file);
-	if (read_file(p_file, proof, PROOF_LEN) != PROOF_LEN)
-		errx(ERR_EXIT, "invalid proof size: %s", p_file);
+	if (read_file(c, commitment, GROUP_LEN) != GROUP_LEN)
+		errx(ERR_EXIT, "invalid commitment size: %s", c);
+	if (read_file(p, proof, PROOF_LEN) != PROOF_LEN)
+		errx(ERR_EXIT, "invalid proof size: %s", p);
 
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
 	init_group(z);
-	z->window = valid_secs ? window_of(time(NULL), valid_secs) : 0;
+	z->window = s ? window_of(time(NULL), s) : 0;
 	status = verify(z, commitment, proof);
 	if (status != OK_EXIT && z->window > 1) {
 		z->window--;
 		status = verify(z, commitment, proof);
 	}
-	if (status != OK_EXIT && !quiet)
+	if (status != OK_EXIT && !q)
 		warnx("commitment and proof mismatched, or proof expired");
 	return status;
 }
