@@ -91,20 +91,20 @@ read_file(const char *file, void *buf, size_t cap)
 }
 
 static void
-read_password(unsigned char key[DIGEST_LEN], const char *s_file, int confirm)
+read_password(unsigned char key[DIGEST_LEN], const char *s, int confirm)
 {
 	unsigned char salt[DIGEST_LEN] = { 0 };
 	char pw[PW_MAX], pw2[PW_MAX];
 
-	if (s_file && read_file(s_file, salt, sizeof(salt)) != sizeof(salt))
-		errx(ERR_EXIT, "invalid salt size: %s", s_file);
+	if (s && read_file(s, salt, sizeof(salt)) != sizeof(salt))
+		errx(ERR_EXIT, "invalid salt size: %s", s);
 	guard(readpassphrase("Password: ", pw, sizeof(pw), RPP_ECHO_OFF) &&
 	    *pw, "password input");
 	guard(!confirm || (readpassphrase("Confirm password: ", pw2,
 	    sizeof(pw2), RPP_ECHO_OFF) && strcmp(pw, pw2) == 0),
 	    "password confirmation");
 	guard(PKCS5_PBKDF2_HMAC(pw, strlen(pw), salt,
-	    s_file ? sizeof(salt) : 0, PW_ITER, EVP_sha512(), DIGEST_LEN, key),
+	    s ? sizeof(salt) : 0, PW_ITER, EVP_sha512(), DIGEST_LEN, key),
 	    "key derivation");
 	explicit_bzero(pw, sizeof(pw));
 	explicit_bzero(pw2, sizeof(pw2));
@@ -128,7 +128,7 @@ hash_file(EVP_MD_CTX *h, const char *file)
 }
 
 static void
-derive_digest(const struct zkcmp *z, const char *file, const char *s_file,
+derive_digest(const struct zkcmp *z, const char *file, const char *s,
     int confirm, unsigned char digest[DIGEST_LEN])
 {
 	unsigned char key[DIGEST_LEN];
@@ -139,11 +139,11 @@ derive_digest(const struct zkcmp *z, const char *file, const char *s_file,
 	    EVP_DigestUpdate(h, DOMAIN_SEPARATOR, sizeof(DOMAIN_SEPARATOR)) == 1,
 	    "hashing");
 	if (file) {
-		if (s_file)
-			hash_file(h, s_file);
+		if (s)
+			hash_file(h, s);
 		hash_file(h, file);
 	} else {
-		read_password(key, s_file, confirm);
+		read_password(key, s, confirm);
 		guard(EVP_DigestUpdate(h, key, sizeof(key)) == 1, "hashing");
 		explicit_bzero(key, sizeof(key));
 	}
@@ -164,36 +164,37 @@ init_group(struct zkcmp *z)
 	    "group setup");
 }
 
-static void
-gen_commit(struct zkcmp *z, const char *file, const char *s_file,
-    const char *o_file)
+static int
+gen_commit(struct zkcmp *z, const char *file, const char *s,
+    const char *o)
 {
 	unsigned char digest[DIGEST_LEN], commitment[GROUP_LEN];
 	FILE *fp;
 
 	init_group(z);
-	derive_digest(z, file, s_file, 1, digest);
-	fp = create_file(o_file);
+	derive_digest(z, file, s, 1, digest);
+	fp = create_file(o);
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
 	explicit_bzero(digest, sizeof(digest));
-	write_file(fp, o_file, commitment, sizeof(commitment));
+	write_file(fp, o, commitment, sizeof(commitment));
+	return OK_EXIT;
 }
 
-static void
-gen_proof(struct zkcmp *z, const char *file, const char *s_file,
-    const char *o_file, uint64_t valid_secs)
+static int
+gen_proof(struct zkcmp *z, const char *file, const char *s,
+    const char *o, uint64_t valid_secs)
 {
 	unsigned char digest[DIGEST_LEN], commitment[GROUP_LEN];
 	unsigned char proof[PROOF_LEN];
 	FILE *fp;
 
 	init_group(z);
-	derive_digest(z, file, s_file, 0, digest);
-	fp = create_file(o_file);
+	derive_digest(z, file, s, 0, digest);
+	fp = create_file(o);
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
@@ -202,7 +203,8 @@ gen_proof(struct zkcmp *z, const char *file, const char *s_file,
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
 	guard(prove(z, digest, commitment, proof) == 0, "proof generation");
 	explicit_bzero(digest, sizeof(digest));
-	write_file(fp, o_file, proof, sizeof(proof));
+	write_file(fp, o, proof, sizeof(proof));
+	return OK_EXIT;
 }
 
 static int
@@ -253,9 +255,9 @@ int
 main(int argc, char **argv)
 {
 	struct zkcmp z = { .h = EVP_sha256() };
-	const char *file = NULL, *s_file = NULL, *o_file = NULL;
+	const char *file = NULL, *s = NULL, *o = NULL;
 	uint64_t t = 0;
-	int ch, cmd = 0, quiet = 0;
+	int ch, cmd = 0, q = 0;
 
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath wpath cpath tty", NULL) == -1)
@@ -283,14 +285,14 @@ main(int argc, char **argv)
 				usage();
 			break;
 		case 's':
-			if (s_file)
+			if (s)
 				usage();
-			s_file = optarg;
+			s = optarg;
 			break;
 		case 'o':
-			if (o_file)
+			if (o)
 				usage();
-			o_file = optarg;
+			o = optarg;
 			break;
 		case 't':
 			if (t)
@@ -298,30 +300,26 @@ main(int argc, char **argv)
 			t = parse_u64(optarg);
 			break;
 		case 'q':
-			quiet = 1;
+			q = 1;
 			break;
 		default:
 			usage();
 		}
 	}
 	argc -= optind;
-	argv += optind;
-
 	switch (argc) {
 	case 0:
 		switch (cmd) {
 		case 'c':
 		case 'C':
-			if (o_file && t == 0) {
-				gen_commit(&z, file, s_file, o_file);
-				return OK_EXIT;
+			if (o && t == 0) {
+				return gen_commit(&z, file, s, o);
 			}
 			break;
 		case 'p':
 		case 'P':
-			if (o_file) {
-				gen_proof(&z, file, s_file, o_file, t);
-				return OK_EXIT;
+			if (o) {
+				return gen_proof(&z, file, s, o, t);
 			}
 			break;
 		case 'g':
@@ -333,7 +331,8 @@ main(int argc, char **argv)
 	case 2:
 		switch (cmd) {
 		case 0:
-			return verify_proof(&z, argv[0], argv[1], t, quiet);
+			argv += optind;
+			return verify_proof(&z, argv[0], argv[1], t, q);
 		}
 		break;
 	}
