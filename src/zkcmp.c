@@ -36,12 +36,6 @@ guard(int ok, const char *what)
 		errx(ERR_EXIT, "%s failed", what);
 }
 
-static uint64_t
-window_of(time_t now, uint64_t t)
-{
-	return (uint64_t)now / t + 1;
-}
-
 static FILE *
 create_file(const char *path)
 {
@@ -184,7 +178,8 @@ gen_proof(struct zkcmp *z, const char *s, uint64_t t, const char *path,
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
-	z->window = t ? window_of(time(NULL), t) : 0;
+	
+	z->window = t ? (uint64_t)time(NULL) / t + 1 : 0;
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
 	guard(prove(z, digest, commitment, proof) == 0, "proof generation");
 	explicit_bzero(digest, sizeof(digest));
@@ -207,7 +202,7 @@ verify_proof(struct zkcmp *z, int q, uint64_t t, const char *c, const char *p)
 		err(ERR_EXIT, "pledge");
 #endif
 	init_group(z);
-	z->window = t ? window_of(time(NULL), t) : 0;
+	z->window = t ? (uint64_t)time(NULL) / t + 1 : 0;
 	status = verify(z, commitment, proof);
 	if (status != OK_EXIT && z->window > 1) {
 		z->window--;
