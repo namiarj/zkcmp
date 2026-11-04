@@ -31,11 +31,11 @@ struct zkcmp {
 	BN_CTX *ctx;
 };
 
-int commit(struct zkcmp *, const unsigned char[DIGEST_LEN],
+int commit(struct zkcmp*, const unsigned char[DIGEST_LEN],
     unsigned char[COMMIT_LEN]);
-int prove(struct zkcmp *, const unsigned char[DIGEST_LEN],
+int prove(struct zkcmp*, const unsigned char[DIGEST_LEN],
     const unsigned char[COMMIT_LEN], unsigned char[PROOF_LEN]);
-int verify(struct zkcmp *, const unsigned char[COMMIT_LEN],
+int verify(struct zkcmp*, const unsigned char[COMMIT_LEN],
     const unsigned char[PROOF_LEN]);
 
 #endif
