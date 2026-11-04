@@ -37,21 +37,14 @@ guard(int ok, const char *what)
 }
 
 static FILE *
-create_file(const char *path)
+create_file(const char *o)
 {
-	int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	int fd = open(o, O_WRONLY | O_CREAT | O_TRUNC, 0600);
 	FILE *f = (fd == -1) ? NULL : fdopen(fd, "wb");
 
 	if (f == NULL)
-		err(ERR_EXIT, "failed to open %s", path);
+		err(ERR_EXIT, "failed to open %s", o);
 	return f;
-}
-
-static void
-write_file(FILE *f, const char *path, const void *buf, size_t len)
-{
-	if (fwrite(buf, 1, len, f) != len || fclose(f))
-		err(ERR_EXIT, "failed to write %s", path);
 }
 
 static size_t
@@ -159,7 +152,8 @@ gen_commit(struct zkcmp *z, const char *s, const char *path,
 #endif
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
 	explicit_bzero(digest, sizeof(digest));
-	write_file(f, o, commitment, sizeof(commitment));
+	if (fwrite(commitment, 1, sizeof(commitment), f) != sizeof(commitment) || fclose(f))
+		err(ERR_EXIT, "failed to write %s", o);
 	return OK_EXIT;
 }
 
@@ -183,7 +177,8 @@ gen_proof(struct zkcmp *z, const char *s, uint64_t t, const char *path,
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
 	guard(prove(z, digest, commitment, proof) == 0, "proof generation");
 	explicit_bzero(digest, sizeof(digest));
-	write_file(f, o, proof, sizeof(proof));
+	if (fwrite(proof, 1, sizeof(proof), f) != sizeof(proof) || fclose(f))
+		err(ERR_EXIT, "failed to write %s", o);
 	return OK_EXIT;
 }
 
@@ -218,17 +213,18 @@ verify_proof(struct zkcmp *z, int q, uint64_t t, const char *c, const char *p)
 }
 
 static int
-gen_salt(const char *path)
+gen_salt(const char *o)
 {
 	unsigned char buf[DIGEST_LEN];
-	FILE *f = create_file(path);
+	FILE *f = create_file(o);
 
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
 	arc4random_buf(buf, sizeof(buf));
-	write_file(f, path, buf, sizeof(buf));
+	if (fwrite(buf, 1, sizeof(buf), f) != sizeof(buf) || fclose(f))
+		err(ERR_EXIT, "failed to write %s", o);
 	explicit_bzero(buf, sizeof(buf));
 	return OK_EXIT;
 }
