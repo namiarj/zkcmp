@@ -37,21 +37,6 @@ guard(int ok, const char *what)
 }
 
 static uint64_t
-parse_u64(const char *t)
-{
-	char *end;
-	unsigned long long v;
-
-	if (!isdigit((unsigned char)*t))
-		errx(ERR_EXIT, "invalid number: %s", t);
-	errno = 0;
-	v = strtoull(t, &end, 10);
-	if (errno || *end != '\0' || v == 0)
-		errx(ERR_EXIT, "invalid number: %s", t);
-	return (uint64_t)v;
-}
-
-static uint64_t
 window_of(time_t now, uint64_t t)
 {
 	return (uint64_t)now / t + 1;
@@ -259,6 +244,7 @@ main(int argc, char **argv)
 {
 	struct zkcmp z = { .h = EVP_sha256() };
 	const char *s = NULL;
+	char *p;
 	uint64_t t = 0;
 	int ch, cmd = 0, q = 0;
 
@@ -293,7 +279,9 @@ main(int argc, char **argv)
 		case 't':
 			if (t)
 				usage();
-			t = parse_u64(optarg);
+			t = strtoull(optarg, &p, 10);
+			if (errno || *p)
+					usage();
 			break;
 		case 'q':
 			q = 1;
