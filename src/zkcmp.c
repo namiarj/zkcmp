@@ -318,7 +318,6 @@ main(int argc, char **argv)
 		case 0:
 			return verify_proof(&z, q, t, argv[0], argv[1]);
 		}
-		break;
 	}
 	usage();
 }
