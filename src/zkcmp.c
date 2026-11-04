@@ -171,7 +171,6 @@ gen_proof(struct zkcmp *z, const char *s, uint64_t t, const char *path,
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
-	
 	z->window = t ? (uint64_t)time(NULL) / t + 1 : 0;
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
 	guard(prove(z, digest, commitment, proof) == 0, "proof generation");
