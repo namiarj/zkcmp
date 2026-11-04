@@ -202,7 +202,6 @@ verify_proof(struct zkcmp *z, int q, uint64_t t, const char *c, const char *p)
 		errx(ERR_EXIT, "invalid commitment size: %s", c);
 	if (read_file(p, proof, PROOF_LEN) != PROOF_LEN)
 		errx(ERR_EXIT, "invalid proof size: %s", p);
-
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
