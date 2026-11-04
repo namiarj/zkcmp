@@ -20,11 +20,11 @@
 _Noreturn static void
 usage(void)
 {
-	fprintf(stderr, "usage: zkcmp -g salt\n"
-		"       zkcmp -c [-h hash] [-s salt] file commit\n"
+	fprintf(stderr, "usage: zkcmp -c [-h hash] [-s salt] file commit\n"
 		"       zkcmp -p [-h hash] [-s salt] [-t seconds] file proof\n"
 		"       zkcmp -C [-h hash] [-s salt] commit\n"
 		"       zkcmp -P [-h hash] [-s salt] [-t seconds] proof\n"
+		"       zkcmp -g salt\n"
 		"       zkcmp [-q] [-h hash] [-t seconds] commit proof\n");
 	exit(ERR_EXIT);
 }

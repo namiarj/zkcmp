@@ -27,11 +27,11 @@ The default hash is SHA-256. SHA3-256 or SHA512-256 can also be selected.
 ## Commands
 
 ```
-zkcmp -g salt
 zkcmp -c [-h sha256|sha3-256|sha512-256] [-s salt] file commit
 zkcmp -p [-h sha256|sha3-256|sha512-256] [-s salt] [-t seconds] file proof
 zkcmp -C [-h sha256|sha3-256|sha512-256] [-s salt] commit
 zkcmp -P [-h sha256|sha3-256|sha512-256] [-s salt] [-t seconds] proof
+zkcmp -g salt
 zkcmp [-q] [-h sha256|sha3-256|sha512-256] [-t seconds] commit proof
 ```
 
