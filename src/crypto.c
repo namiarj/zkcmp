@@ -9,7 +9,7 @@
 
 int
 commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
-    unsigned char commitment[GROUP_LEN])
+    unsigned char commitment[COMMIT_LEN])
 {
 	BIGNUM *x = BN_bin2bn(digest, DIGEST_LEN, NULL);
 	BIGNUM *y = BN_new();
@@ -17,7 +17,7 @@ commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
 
 	if (x && y && BN_mod(x, x, z->q, z->ctx) == 1 &&
 	    BN_mod_exp(y, z->g, x, z->p, z->ctx) == 1 &&
-	    BN_bn2binpad(y, commitment, GROUP_LEN) == GROUP_LEN)
+	    BN_bn2binpad(y, commitment, COMMIT_LEN) == COMMIT_LEN)
 		ret = 0;
 	BN_clear_free(x);
 	BN_free(y);
@@ -25,8 +25,8 @@ commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
 }
 
 static int
-challenge(const struct zkcmp *z, const unsigned char y[GROUP_LEN],
-    const unsigned char r[GROUP_LEN], BIGNUM *c)
+challenge(const struct zkcmp *z, const unsigned char y[COMMIT_LEN],
+    const unsigned char r[COMMIT_LEN], BIGNUM *c)
 {
 	EVP_MD_CTX *h = EVP_MD_CTX_new();
 	uint64_t be = htobe64(z->window);
@@ -34,8 +34,8 @@ challenge(const struct zkcmp *z, const unsigned char y[GROUP_LEN],
 	unsigned int len = 0;
 	int ok = h != NULL &&
 	    EVP_DigestInit_ex(h, z->h, NULL) == 1 &&
-	    EVP_DigestUpdate(h, y, GROUP_LEN) == 1 &&
-	    EVP_DigestUpdate(h, r, GROUP_LEN) == 1;
+	    EVP_DigestUpdate(h, y, COMMIT_LEN) == 1 &&
+	    EVP_DigestUpdate(h, r, COMMIT_LEN) == 1;
 
 	if (ok && z->window != 0)
 		ok = EVP_DigestUpdate(h, &be, sizeof(be)) == 1;
@@ -48,26 +48,26 @@ challenge(const struct zkcmp *z, const unsigned char y[GROUP_LEN],
 
 int
 prove(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
-    const unsigned char commitment[GROUP_LEN],
+    const unsigned char commitment[COMMIT_LEN],
     unsigned char proof[PROOF_LEN])
 {
 	BIGNUM *x = BN_bin2bn(digest, DIGEST_LEN, NULL);
 	BIGNUM *k = BN_new();
 	BIGNUM *r = BN_new();
 	BIGNUM *c = BN_new();
-	unsigned char rb[GROUP_LEN];
+	unsigned char rb[COMMIT_LEN];
 	int ret = -1;
 
 	if (x && k && r && c &&
 	    BN_mod(x, x, z->q, z->ctx) == 1 &&
 	    BN_rand_range(k, z->q) == 1 &&
 	    BN_mod_exp(r, z->g, k, z->p, z->ctx) == 1 &&
-	    BN_bn2binpad(r, rb, GROUP_LEN) == GROUP_LEN &&
+	    BN_bn2binpad(r, rb, COMMIT_LEN) == COMMIT_LEN &&
 	    challenge(z, commitment, rb, c) == 0 &&
 	    BN_mod_mul(c, c, x, z->q, z->ctx) == 1 &&
 	    BN_mod_add(c, c, k, z->q, z->ctx) == 1 &&
-	    BN_bn2binpad(c, proof + GROUP_LEN, GROUP_LEN) == GROUP_LEN) {
-		memcpy(proof, rb, GROUP_LEN);
+	    BN_bn2binpad(c, proof + COMMIT_LEN, COMMIT_LEN) == COMMIT_LEN) {
+		memcpy(proof, rb, COMMIT_LEN);
 		ret = 0;
 	}
 	BN_clear_free(x);
@@ -78,12 +78,12 @@ prove(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
 }
 
 int
-verify(struct zkcmp *z, const unsigned char commitment[GROUP_LEN],
+verify(struct zkcmp *z, const unsigned char commitment[COMMIT_LEN],
     const unsigned char proof[PROOF_LEN])
 {
-	BIGNUM *y = BN_bin2bn(commitment, GROUP_LEN, NULL);
-	BIGNUM *r = BN_bin2bn(proof, GROUP_LEN, NULL);
-	BIGNUM *s = BN_bin2bn(proof + GROUP_LEN, GROUP_LEN, NULL);
+	BIGNUM *y = BN_bin2bn(commitment, COMMIT_LEN, NULL);
+	BIGNUM *r = BN_bin2bn(proof, COMMIT_LEN, NULL);
+	BIGNUM *s = BN_bin2bn(proof + COMMIT_LEN, COMMIT_LEN, NULL);
 	BIGNUM *c = BN_new();
 	BIGNUM *lhs = BN_new();
 	BIGNUM *rhs = BN_new();

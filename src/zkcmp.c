@@ -153,7 +153,7 @@ static int
 gen_commit(struct zkcmp *z, const char *s, const char *path,
     const char *o)
 {
-	unsigned char digest[DIGEST_LEN], commitment[GROUP_LEN];
+	unsigned char digest[DIGEST_LEN], commitment[COMMIT_LEN];
 	FILE *f;
 
 	init_group(z);
@@ -173,7 +173,7 @@ static int
 gen_proof(struct zkcmp *z, const char *s, uint64_t t, const char *path,
     const char *o)
 {
-	unsigned char digest[DIGEST_LEN], commitment[GROUP_LEN];
+	unsigned char digest[DIGEST_LEN], commitment[COMMIT_LEN];
 	unsigned char proof[PROOF_LEN];
 	FILE *f;
 
@@ -195,10 +195,10 @@ gen_proof(struct zkcmp *z, const char *s, uint64_t t, const char *path,
 static int
 verify_proof(struct zkcmp *z, int q, uint64_t t, const char *c, const char *p)
 {
-	unsigned char commitment[GROUP_LEN], proof[PROOF_LEN];
+	unsigned char commitment[COMMIT_LEN], proof[PROOF_LEN];
 	int status;
 
-	if (read_file(c, commitment, GROUP_LEN) != GROUP_LEN)
+	if (read_file(c, commitment, COMMIT_LEN) != COMMIT_LEN)
 		errx(ERR_EXIT, "invalid commitment size: %s", c);
 	if (read_file(p, proof, PROOF_LEN) != PROOF_LEN)
 		errx(ERR_EXIT, "invalid proof size: %s", p);
