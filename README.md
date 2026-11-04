@@ -105,10 +105,10 @@ Generates a random 32 byte salt and writes it to a file. The file is created wit
 `-C` and `-P` work like `-c` and `-p`, but the secret is a password typed at the terminal instead of a file. Using a private salt for low-entropy passwords significantly hardens against brute-force or dictionary attacks on commits and proofs.
 
 ```sh
-zkcmp -g user.salt                        # one salt per user
-zkcmp -s user.salt -C user.commit      # register (asks twice)
-zkcmp -s user.salt -P user.proof       # authenticate (asks once)
-zkcmp user.commit user.proof              # verify
+zkcmp -g user.salt                  # one salt per user
+zkcmp -s user.salt -C user.commit   # register (asks twice)
+zkcmp -s user.salt -P user.proof    # authenticate (asks once)
+zkcmp user.commit user.proof        # verify
 ```
 
 ## Building
