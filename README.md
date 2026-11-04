@@ -27,11 +27,11 @@ The default hash is SHA-256. SHA3-256 or SHA512-256 can also be selected.
 ## Commands
 
 ```
-zkcmp [-h sha256|sha3-256|sha512-256] [-s salt] -c file -o commit
-zkcmp [-h sha256|sha3-256|sha512-256] [-s salt] -p file [-t seconds] -o proof
-zkcmp [-h sha256|sha3-256|sha512-256] [-s salt] -C -o commit
-zkcmp [-h sha256|sha3-256|sha512-256] [-s salt] -P [-t seconds] -o proof
 zkcmp -g salt
+zkcmp -c [-h sha256|sha3-256|sha512-256] [-s salt] file commit
+zkcmp -p [-h sha256|sha3-256|sha512-256] [-s salt] [-t seconds] file proof
+zkcmp -C [-h sha256|sha3-256|sha512-256] [-s salt] commit
+zkcmp -P [-h sha256|sha3-256|sha512-256] [-s salt] [-t seconds] proof
 zkcmp [-q] [-h sha256|sha3-256|sha512-256] [-t seconds] commit proof
 ```
 
@@ -40,7 +40,7 @@ zkcmp [-q] [-h sha256|sha3-256|sha512-256] [-t seconds] commit proof
 Creates a reusable public commitment from a file.
 
 ```sh
-zkcmp -c release.tar -o release.tar.commit
+zkcmp -c release.tar release.tar.commit
 ```
 
 A commitment can be published once and used as the public statement for multiple independent proofs.
@@ -50,7 +50,7 @@ A commitment can be published once and used as the public statement for multiple
 Creates a proof from a local file.
 
 ```sh
-zkcmp -p release.tar -o release.tar.proof
+zkcmp -p release.tar release.tar.proof
 ```
 
 ### Verification
@@ -68,10 +68,10 @@ This is useful when a commitment has been published and multiple parties need to
 For example:
 
 ```sh
-server$ zkcmp -c release.tar -o release.tar.commit
+server$ zkcmp -c release.tar release.tar.commit
 
-alice$ zkcmp -p release.tar -o alice.proof
-bob$   zkcmp -p release.tar -o bob.proof
+alice$ zkcmp -p release.tar alice.proof
+bob$   zkcmp -p release.tar bob.proof
 
 server$ zkcmp release.tar.commit alice.proof
 server$ zkcmp release.tar.commit bob.proof
@@ -82,8 +82,8 @@ server$ zkcmp release.tar.commit bob.proof
 Binds a proof to a time window. The clock is divided into windows of `seconds` length, and the index of the window the proof was created in is hashed into the challenge.
 
 ```sh
-zkcmp -p release.tar -t 3600 -o release.tar.proof    # prover
-zkcmp -t 3600 release.tar.commit release.tar.proof   # verifier
+zkcmp -p release.tar -t 3600 release.tar.proof     # prover
+zkcmp -t 3600 release.tar.commit release.tar.proof # verifier
 ```
 
 A proof is valid for at least `seconds` and at most twice that. The verifier must pass the same `-t` value the prover used. A bounded proof does not verify without `-t`, and an unbounded proof does not verify with it.
@@ -106,8 +106,8 @@ Generates a random 32 byte salt and writes it to a file. The file is created wit
 
 ```sh
 zkcmp -g user.salt                        # one salt per user
-zkcmp -s user.salt -C -o user.commit      # register (asks twice)
-zkcmp -s user.salt -P -o user.proof       # authenticate (asks once)
+zkcmp -s user.salt -C user.commit      # register (asks twice)
+zkcmp -s user.salt -P user.proof       # authenticate (asks once)
 zkcmp user.commit user.proof              # verify
 ```
 
