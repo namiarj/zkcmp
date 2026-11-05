@@ -13,15 +13,15 @@ commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
 {
 	BIGNUM *x = BN_bin2bn(digest, DIGEST_LEN, NULL);
 	BIGNUM *y = BN_new();
-	int ret = -1;
+	int status = -1;
 
 	if (x && y && BN_mod(x, x, z->q, z->ctx) == 1 &&
 	    BN_mod_exp(y, z->g, x, z->p, z->ctx) == 1 &&
 	    BN_bn2binpad(y, commitment, COMMIT_LEN) == COMMIT_LEN)
-		ret = 0;
+		status = 0;
 	BN_clear_free(x);
 	BN_free(y);
-	return ret;
+	return status;
 }
 
 static int
@@ -56,7 +56,7 @@ prove(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
 	BIGNUM *r = BN_new();
 	BIGNUM *c = BN_new();
 	unsigned char rb[COMMIT_LEN];
-	int ret = -1;
+	int status = -1;
 
 	if (x && k && r && c &&
 	    BN_mod(x, x, z->q, z->ctx) == 1 &&
@@ -68,13 +68,13 @@ prove(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
 	    BN_mod_add(c, c, k, z->q, z->ctx) == 1 &&
 	    BN_bn2binpad(c, proof + COMMIT_LEN, COMMIT_LEN) == COMMIT_LEN) {
 		memcpy(proof, rb, COMMIT_LEN);
-		ret = 0;
+		status = 0;
 	}
 	BN_clear_free(x);
 	BN_clear_free(k);
 	BN_free(r);
 	BN_clear_free(c);
-	return ret;
+	return status;
 }
 
 int
@@ -87,7 +87,7 @@ verify(struct zkcmp *z, const unsigned char commitment[COMMIT_LEN],
 	BIGNUM *c = BN_new();
 	BIGNUM *lhs = BN_new();
 	BIGNUM *rhs = BN_new();
-	int ret = DIFF_EXIT;
+	int status = DIFF_EXIT;
 
 	if (y && r && s && c && lhs && rhs &&
 	    !BN_is_zero(y) && BN_cmp(y, z->p) < 0 &&
@@ -98,12 +98,12 @@ verify(struct zkcmp *z, const unsigned char commitment[COMMIT_LEN],
 	    BN_mod_exp(lhs, z->g, s, z->p, z->ctx) == 1 &&
 	    BN_mod_exp(rhs, y, c, z->p, z->ctx) == 1 &&
 	    BN_mod_mul(rhs, rhs, r, z->p, z->ctx) == 1)
-		ret = BN_cmp(lhs, rhs) == 0 ? OK_EXIT : DIFF_EXIT;
+		status = BN_cmp(lhs, rhs) == 0 ? OK_EXIT : DIFF_EXIT;
 	BN_free(y);
 	BN_free(r);
 	BN_free(s);
 	BN_free(c);
 	BN_free(lhs);
 	BN_free(rhs);
-	return ret;
+	return status;
 }
