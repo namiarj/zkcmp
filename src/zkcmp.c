@@ -35,15 +35,16 @@ guard(int ok, const char *what)
 		errx(ERR_EXIT, "%s failed", what);
 }
 
-static FILE *
-create_file(const char *o)
+static void
+write_file(const char *o, const void *buf, size_t len)
 {
 	int fd = open(o, O_WRONLY | O_CREAT | O_TRUNC, 0600);
 	FILE *f = (fd == -1) ? NULL : fdopen(fd, "wb");
 
 	if (f == NULL)
 		err(ERR_EXIT, "failed to open %s", o);
-	return f;
+	if (fwrite(buf, 1, len, f) != len || fclose(f))
+		err(ERR_EXIT, "failed to write %s", o);
 }
 
 static size_t
@@ -140,26 +141,18 @@ gen_statement(struct zkcmp *z, const char mode, const char *s, uint64_t t,
 	const char *path, const char *o)
 {
 	unsigned char digest[DIGEST_LEN], commitment[COMMIT_LEN], proof[PROOF_LEN];
-	FILE *f;
 
 	init_group(z);
 	derive_digest(z, s, path, digest, (mode == 'c' || mode == 'C'));
-	f = create_file(o);
-#ifdef __OpenBSD__
-	if (pledge("stdio", NULL) == -1)
-		err(ERR_EXIT, "pledge");
-#endif
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
 	if (mode == 'p' || mode == 'P') {
 		z->window = t ? (uint64_t)time(NULL) / t + 1 : 0;
 		guard(prove(z, digest, commitment, proof) == 0, "proof generation");
 		explicit_bzero(digest, sizeof(digest));
-		if (fwrite(proof, 1, sizeof(proof), f) != sizeof(proof) || fclose(f))
-			err(ERR_EXIT, "failed to write %s", o);
+		write_file(o, proof, PROOF_LEN);
 	} else {
 		explicit_bzero(digest, sizeof(digest));
-		if (fwrite(commitment, 1, sizeof(commitment), f) != sizeof(commitment) || fclose(f))
-			err(ERR_EXIT, "failed to write %s", o);
+		write_file(o, commitment, COMMIT_LEN);
 	}
 	return OK_EXIT;
 }
@@ -174,10 +167,6 @@ verify_proof(struct zkcmp *z, int q, uint64_t t, const char *c, const char *p)
 		errx(ERR_EXIT, "invalid commitment size: %s", c);
 	if (read_file(p, proof, PROOF_LEN) != PROOF_LEN)
 		errx(ERR_EXIT, "invalid proof size: %s", p);
-#ifdef __OpenBSD__
-	if (pledge("stdio", NULL) == -1)
-		err(ERR_EXIT, "pledge");
-#endif
 	init_group(z);
 	z->window = t ? (uint64_t)time(NULL) / t + 1 : 0;
 	status = verify(z, commitment, proof);
@@ -198,15 +187,9 @@ static int
 gen_salt(const char *o)
 {
 	unsigned char buf[DIGEST_LEN];
-	FILE *f = create_file(o);
 
-#ifdef __OpenBSD__
-	if (pledge("stdio", NULL) == -1)
-		err(ERR_EXIT, "pledge");
-#endif
 	arc4random_buf(buf, sizeof(buf));
-	if (fwrite(buf, 1, sizeof(buf), f) != sizeof(buf) || fclose(f))
-		err(ERR_EXIT, "failed to write %s", o);
+	write_file(o, buf, DIGEST_LEN);
 	explicit_bzero(buf, sizeof(buf));
 	return OK_EXIT;
 }
