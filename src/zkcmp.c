@@ -99,8 +99,8 @@ hash_file(EVP_MD_CTX *h, const char *path)
 }
 
 static void
-derive_digest(const struct zkcmp *z, const char *path, const char *s,
-    int confirm, unsigned char digest[DIGEST_LEN])
+derive_digest(const struct zkcmp *z, const char *s, const char *path,
+    unsigned char digest[DIGEST_LEN], int confirm)
 {
 	unsigned char key[DIGEST_LEN];
 	EVP_MD_CTX *h = EVP_MD_CTX_new();
@@ -136,47 +136,31 @@ init_group(struct zkcmp *z)
 }
 
 static int
-gen_commit(struct zkcmp *z, const char *s, const char *path,
-    const char *o)
+gen_statement(struct zkcmp *z, const char mode, const char *s, uint64_t t, 
+	const char *path, const char *o)
 {
-	unsigned char digest[DIGEST_LEN], commitment[COMMIT_LEN];
+	unsigned char digest[DIGEST_LEN], commitment[COMMIT_LEN], proof[PROOF_LEN];
 	FILE *f;
 
 	init_group(z);
-	derive_digest(z, path, s, 1, digest);
+	derive_digest(z, s, path, digest, (mode == 'c' || mode == 'C'));
 	f = create_file(o);
 #ifdef __OpenBSD__
 	if (pledge("stdio", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
-	explicit_bzero(digest, sizeof(digest));
-	if (fwrite(commitment, 1, sizeof(commitment), f) != sizeof(commitment) || fclose(f))
-		err(ERR_EXIT, "failed to write %s", o);
-	return OK_EXIT;
-}
-
-static int
-gen_proof(struct zkcmp *z, const char *s, uint64_t t, const char *path,
-    const char *o)
-{
-	unsigned char digest[DIGEST_LEN], commitment[COMMIT_LEN];
-	unsigned char proof[PROOF_LEN];
-	FILE *f;
-
-	init_group(z);
-	derive_digest(z, path, s, 0, digest);
-	f = create_file(o);
-#ifdef __OpenBSD__
-	if (pledge("stdio", NULL) == -1)
-		err(ERR_EXIT, "pledge");
-#endif
-	z->window = t ? (uint64_t)time(NULL) / t + 1 : 0;
-	guard(commit(z, digest, commitment) == 0, "commitment generation");
-	guard(prove(z, digest, commitment, proof) == 0, "proof generation");
-	explicit_bzero(digest, sizeof(digest));
-	if (fwrite(proof, 1, sizeof(proof), f) != sizeof(proof) || fclose(f))
-		err(ERR_EXIT, "failed to write %s", o);
+	if (mode == 'p' || mode == 'P') {
+		z->window = t ? (uint64_t)time(NULL) / t + 1 : 0;
+		guard(prove(z, digest, commitment, proof) == 0, "proof generation");
+		explicit_bzero(digest, sizeof(digest));
+		if (fwrite(proof, 1, sizeof(proof), f) != sizeof(proof) || fclose(f))
+			err(ERR_EXIT, "failed to write %s", o);
+	} else {
+		explicit_bzero(digest, sizeof(digest));
+		if (fwrite(commitment, 1, sizeof(commitment), f) != sizeof(commitment) || fclose(f))
+			err(ERR_EXIT, "failed to write %s", o);
+	}
 	return OK_EXIT;
 }
 
@@ -289,20 +273,20 @@ main(int argc, char **argv)
 			break;
 		case 'C':
 			if (!t)
-				return gen_commit(&z, s, NULL, argv[0]);
+				return gen_statement(&z, cmd, s, t, NULL, argv[0]);
 			break;
 		case 'P':
-			return gen_proof(&z, s, t, NULL, argv[0]);
+			return gen_statement(&z, cmd, s, t, NULL, argv[0]);
 		}
 		break;
 	case 2:
 		switch (cmd) {
 		case 'c':
 			if (!t)
-				return gen_commit(&z, s, argv[0], argv[1]);
+				return gen_statement(&z, cmd, s, t, argv[0], argv[1]);
 			break;
 		case 'p':
-			return gen_proof(&z, s, t, argv[0], argv[1]);
+			return gen_statement(&z, cmd, s, t, argv[0], argv[1]);
 		case 0:
 			return verify_proof(&z, q, t, argv[0], argv[1]);
 		}
