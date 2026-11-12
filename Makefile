@@ -1,5 +1,5 @@
 PROG = zkcmp
-SRCS = src/zkcmp.c src/crypto.c
+SRCS = src/zkcmp.c src/schnorr.c
 OBJS = $(SRCS:.c=.o)
 
 PREFIX ?= /usr/local
@@ -16,8 +16,8 @@ $(PROG): $(OBJS)
 src/zkcmp.o: src/zkcmp.c src/zkcmp.h
 	$(CC) $(CFLAGS) -c -o $@ src/zkcmp.c
 
-src/crypto.o: src/crypto.c src/zkcmp.h
-	$(CC) $(CFLAGS) -c -o $@ src/crypto.c
+src/crypto.o: src/schnorr.c src/zkcmp.h
+	$(CC) $(CFLAGS) -c -o $@ src/schnorr.c
 
 install: $(PROG)
 	install -d $(DESTDIR)$(BINDIR)
