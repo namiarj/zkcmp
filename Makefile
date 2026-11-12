@@ -16,7 +16,7 @@ $(PROG): $(OBJS)
 src/zkcmp.o: src/zkcmp.c src/zkcmp.h
 	$(CC) $(CFLAGS) -c -o $@ src/zkcmp.c
 
-src/crypto.o: src/schnorr.c src/zkcmp.h
+src/schnorr.o: src/schnorr.c src/zkcmp.h
 	$(CC) $(CFLAGS) -c -o $@ src/schnorr.c
 
 install: $(PROG)
