@@ -43,6 +43,7 @@ zkcmp [-q] [-h hash] [-t seconds] commit proof
 - `-s` names the secret salt file, used on commit and prove.
 - `-t` sets the time window in seconds, for prove and verify only.
 - `-q` suppresses the mismatch message on verify.
+- `-` as the file name reads standard input, for `-c` and `-p`.
 
 Exit status is `0` on match, `1` on mismatch or expired proof, and `2` on error.
 
@@ -56,7 +57,14 @@ server$ zkcmp release.tar.commit alice.proof
 server$ zkcmp release.tar.commit bob.proof
 ```
 
-Without `-s`, the commitment depends only on the file. Anyone who has the file can prove against it, so keep the file private if that matters.
+## Standard input
+
+```sh
+tar -c release | zkcmp -c - release.tar.commit
+tar -c release | zkcmp -p - release.tar.proof
+```
+
+The stream is hashed as it is read, so the secret never touches disk.
 
 ## Time-bound proofs
 

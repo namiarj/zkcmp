@@ -66,7 +66,7 @@ static void
 hash_file(EVP_MD_CTX *h, const char *path)
 {
 	unsigned char buf[IO_BUF_LEN];
-	FILE *f = fopen(path, "rb");
+	FILE *f = strcmp(path, "-") ? fopen(path, "rb") : stdin;
 	size_t n;
 
 	if (f == NULL)
@@ -87,13 +87,9 @@ derive(const struct zkcmp *z, const char *s, const char *path, int confirm,
 	char pw[PW_MAX], pw2[PW_MAX];
 	EVP_MD_CTX *h = EVP_MD_CTX_new();
 	unsigned int len = 0;
-	size_t saltlen = 0;
 
-	if (s) {
-		if (read_file(s, salt, sizeof(salt)) != sizeof(salt))
-			errx(ERR_EXIT, "invalid salt size: %s", s);
-		saltlen = sizeof(salt);
-	}
+	if (s && read_file(s, salt, sizeof(salt)) != sizeof(salt))
+		errx(ERR_EXIT, "invalid salt size: %s", s);
 	guard(h && EVP_DigestInit_ex(h, z->h, NULL) == 1 &&
 	    EVP_DigestUpdate(h, DOMAIN_SEPARATOR, sizeof(DOMAIN_SEPARATOR)) == 1,
 	    "hashing");
@@ -112,8 +108,9 @@ derive(const struct zkcmp *z, const char *s, const char *path, int confirm,
 	guard(EVP_DigestFinal_ex(h, pre, &len) == 1 && len == DIGEST_LEN,
 	    "hashing");
 	EVP_MD_CTX_free(h);
-	guard(PKCS5_PBKDF2_HMAC((const char *)pre, sizeof(pre), salt, saltlen,
-	    PW_ITER, EVP_sha512(), DIGEST_LEN, digest), "key derivation");
+	guard(PKCS5_PBKDF2_HMAC((const char *)pre, sizeof(pre), salt,
+	    s ? sizeof(salt) : 0, PW_ITER, EVP_sha512(), DIGEST_LEN, digest),
+	    "key derivation");
 	explicit_bzero(pre, sizeof(pre));
 }
 
@@ -136,7 +133,6 @@ gen_statement(struct zkcmp *z, char mode, const char *s, uint64_t t,
 	unsigned char digest[DIGEST_LEN], commitment[COMMIT_LEN], proof[PROOF_LEN];
 	int is_proof = mode == 'p' || mode == 'P';
 
-	init_group(z);
 	derive(z, s, path, mode == 'c' || mode == 'C', digest);
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
 	if (is_proof) {
@@ -158,7 +154,6 @@ verify_proof(struct zkcmp *z, int q, uint64_t t, const char *c, const char *p)
 	unsigned char commitment[COMMIT_LEN], proof[PROOF_LEN];
 	int status;
 
-	init_group(z);
 	if (read_file(c, commitment, COMMIT_LEN) != COMMIT_LEN)
 		errx(ERR_EXIT, "invalid commitment size: %s", c);
 	if (read_file(p, proof, PROOF_LEN) != PROOF_LEN)
@@ -242,6 +237,7 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+	init_group(&z);
 	switch (argc) {
 	case 1:
 		switch (cmd) {
