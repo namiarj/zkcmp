@@ -63,26 +63,6 @@ read_file(const char *path, void *buf, size_t cap)
 }
 
 static void
-read_password(unsigned char key[DIGEST_LEN], const char *s, int confirm)
-{
-	unsigned char salt[DIGEST_LEN] = { 0 };
-	char pw[PW_MAX], pw2[PW_MAX];
-
-	if (s && read_file(s, salt, sizeof(salt)) != sizeof(salt))
-		errx(ERR_EXIT, "invalid salt size: %s", s);
-	guard(readpassphrase("Password: ", pw, sizeof(pw), RPP_ECHO_OFF) &&
-	    *pw, "password input");
-	guard(!confirm || (readpassphrase("Confirm password: ", pw2,
-	    sizeof(pw2), RPP_ECHO_OFF) && strcmp(pw, pw2) == 0),
-	    "password confirmation");
-	guard(PKCS5_PBKDF2_HMAC(pw, strlen(pw), salt,
-	    s ? sizeof(salt) : 0, PW_ITER, EVP_sha512(), DIGEST_LEN, key),
-	    "key derivation");
-	explicit_bzero(pw, sizeof(pw));
-	explicit_bzero(pw2, sizeof(pw2));
-}
-
-static void
 hash_file(EVP_MD_CTX *h, const char *path)
 {
 	unsigned char buf[IO_BUF_LEN];
@@ -100,28 +80,41 @@ hash_file(EVP_MD_CTX *h, const char *path)
 }
 
 static void
-derive_digest(const struct zkcmp *z, const char *s, const char *path,
-    unsigned char digest[DIGEST_LEN], int confirm)
+derive(const struct zkcmp *z, const char *s, const char *path, int confirm,
+    unsigned char digest[DIGEST_LEN])
 {
-	unsigned char key[DIGEST_LEN];
+	unsigned char salt[DIGEST_LEN] = { 0 }, pre[DIGEST_LEN];
+	char pw[PW_MAX], pw2[PW_MAX];
 	EVP_MD_CTX *h = EVP_MD_CTX_new();
 	unsigned int len = 0;
+	size_t saltlen = 0;
 
+	if (s) {
+		if (read_file(s, salt, sizeof(salt)) != sizeof(salt))
+			errx(ERR_EXIT, "invalid salt size: %s", s);
+		saltlen = sizeof(salt);
+	}
 	guard(h && EVP_DigestInit_ex(h, z->h, NULL) == 1 &&
 	    EVP_DigestUpdate(h, DOMAIN_SEPARATOR, sizeof(DOMAIN_SEPARATOR)) == 1,
 	    "hashing");
 	if (path) {
-		if (s)
-			hash_file(h, s);
 		hash_file(h, path);
 	} else {
-		read_password(key, s, confirm);
-		guard(EVP_DigestUpdate(h, key, sizeof(key)) == 1, "hashing");
-		explicit_bzero(key, sizeof(key));
+		guard(readpassphrase("Password: ", pw, sizeof(pw),
+		    RPP_ECHO_OFF) && *pw, "password input");
+		guard(!confirm || (readpassphrase("Confirm password: ", pw2,
+		    sizeof(pw2), RPP_ECHO_OFF) && strcmp(pw, pw2) == 0),
+		    "password confirmation");
+		guard(EVP_DigestUpdate(h, pw, strlen(pw)) == 1, "hashing");
+		explicit_bzero(pw, sizeof(pw));
+		explicit_bzero(pw2, sizeof(pw2));
 	}
-	guard(EVP_DigestFinal_ex(h, digest, &len) == 1 && len == DIGEST_LEN,
+	guard(EVP_DigestFinal_ex(h, pre, &len) == 1 && len == DIGEST_LEN,
 	    "hashing");
 	EVP_MD_CTX_free(h);
+	guard(PKCS5_PBKDF2_HMAC((const char *)pre, sizeof(pre), salt, saltlen,
+	    PW_ITER, EVP_sha512(), DIGEST_LEN, digest), "key derivation");
+	explicit_bzero(pre, sizeof(pre));
 }
 
 static void
@@ -137,23 +130,24 @@ init_group(struct zkcmp *z)
 }
 
 static int
-gen_statement(struct zkcmp *z, const char mode, const char *s, uint64_t t, 
-	const char *path, const char *o)
+gen_statement(struct zkcmp *z, char mode, const char *s, uint64_t t,
+    const char *path, const char *o)
 {
 	unsigned char digest[DIGEST_LEN], commitment[COMMIT_LEN], proof[PROOF_LEN];
+	int is_proof = mode == 'p' || mode == 'P';
 
-	init_group(z);
-	derive_digest(z, s, path, digest, (mode == 'c' || mode == 'C'));
+	derive(z, s, path, mode == 'c' || mode == 'C', digest);
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
-	if (mode == 'p' || mode == 'P') {
+	if (is_proof) {
 		z->window = t ? (uint64_t)time(NULL) / t + 1 : 0;
-		guard(prove(z, digest, commitment, proof) == 0, "proof generation");
-		explicit_bzero(digest, sizeof(digest));
-		write_file(o, proof, PROOF_LEN);
-	} else {
-		explicit_bzero(digest, sizeof(digest));
-		write_file(o, commitment, COMMIT_LEN);
+		guard(prove(z, digest, commitment, proof) == 0,
+		    "proof generation");
 	}
+	explicit_bzero(digest, sizeof(digest));
+	if (is_proof)
+		write_file(o, proof, PROOF_LEN);
+	else
+		write_file(o, commitment, COMMIT_LEN);
 	return OK_EXIT;
 }
 
@@ -167,7 +161,6 @@ verify_proof(struct zkcmp *z, int q, uint64_t t, const char *c, const char *p)
 		errx(ERR_EXIT, "invalid commitment size: %s", c);
 	if (read_file(p, proof, PROOF_LEN) != PROOF_LEN)
 		errx(ERR_EXIT, "invalid proof size: %s", p);
-	init_group(z);
 	z->window = t ? (uint64_t)time(NULL) / t + 1 : 0;
 	status = verify(z, commitment, proof);
 	if (status != OK_EXIT && z->window > 1) {
@@ -236,7 +229,7 @@ main(int argc, char **argv)
 				usage();
 			t = strtoull(optarg, &p, 10);
 			if (errno || *p)
-					usage();
+				usage();
 			break;
 		case 'q':
 			q = 1;
@@ -247,6 +240,7 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+	init_group(&z);
 	switch (argc) {
 	case 1:
 		switch (cmd) {
