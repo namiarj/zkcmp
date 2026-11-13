@@ -26,4 +26,7 @@ install: $(PROG)
 clean:
 	rm -f $(PROG) $(OBJS)
 
-.PHONY: all install clean
+test: $(PROG)
+	ZKCMP=./$(PROG) sh tests/test.sh
+
+.PHONY: all install clean test
