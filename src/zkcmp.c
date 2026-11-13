@@ -119,6 +119,7 @@ gen_statement(struct zkcmp *z, char mode, const char *s, uint64_t t,
 	unsigned char digest[DIGEST_LEN], commitment[COMMIT_LEN], proof[PROOF_LEN];
 	int is_proof = mode == 'p' || mode == 'P';
 
+	init_group(z);
 	derive(z, s, path, mode == 'c' || mode == 'C', digest);
 	guard(commit(z, digest, commitment) == 0, "commitment generation");
 	if (is_proof) {
@@ -140,6 +141,7 @@ verify_proof(struct zkcmp *z, int q, uint64_t t, const char *c, const char *p)
 	unsigned char commitment[COMMIT_LEN], proof[PROOF_LEN];
 	int status;
 
+	init_group(z);
 	if (read_file(c, commitment, COMMIT_LEN) != COMMIT_LEN)
 		errx(ERR_EXIT, "invalid commitment size: %s", c);
 	if (read_file(p, proof, PROOF_LEN) != PROOF_LEN)
@@ -223,7 +225,6 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
-	init_group(&z);
 	switch (argc) {
 	case 1:
 		switch (cmd) {
