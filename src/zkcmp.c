@@ -38,7 +38,8 @@ guard(int ok, const char *what)
 static void
 write_file(const char *o, const void *buf, size_t len)
 {
-	int fd = open(o, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	int fd = strcmp(o, "-") ? open(o, O_WRONLY | O_CREAT | O_TRUNC, 0600)
+	    : STDOUT_FILENO;
 	FILE *f = (fd == -1) ? NULL : fdopen(fd, "wb");
 
 	if (f == NULL)
@@ -47,26 +48,11 @@ write_file(const char *o, const void *buf, size_t len)
 		err(ERR_EXIT, "failed to write %s", o);
 }
 
-static size_t
-read_file(const char *path, void *buf, size_t cap)
-{
-	FILE *f = fopen(path, "rb");
-	size_t n;
-
-	if (f == NULL)
-		err(ERR_EXIT, "failed to open %s", path);
-	n = fread(buf, 1, cap, f);
-	if (ferror(f) || fgetc(f) != EOF)
-		errx(ERR_EXIT, "invalid file size or read error: %s", path);
-	fclose(f);
-	return n;
-}
-
 static void
 hash_file(EVP_MD_CTX *h, const char *path)
 {
 	unsigned char buf[IO_BUF_LEN];
-	FILE *f = strcmp(path, "-") ? fopen(path, "rb") : stdin;
+	FILE *f = fopen(path, "rb");
 	size_t n;
 
 	if (f == NULL)
