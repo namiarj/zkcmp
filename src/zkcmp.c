@@ -48,6 +48,21 @@ write_file(const char *o, const void *buf, size_t len)
 		err(ERR_EXIT, "failed to write %s", o);
 }
 
+static size_t
+read_file(const char *path, void *buf, size_t cap)
+{
+	FILE *f = fopen(path, "rb");
+	size_t n;
+
+	if (f == NULL)
+		err(ERR_EXIT, "failed to open %s", path);
+	n = fread(buf, 1, cap, f);
+	if (ferror(f) || fgetc(f) != EOF)
+		errx(ERR_EXIT, "invalid file size or read error: %s", path);
+	fclose(f);
+	return n;
+}
+
 static void
 hash_file(EVP_MD_CTX *h, const char *path)
 {
