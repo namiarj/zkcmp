@@ -17,16 +17,18 @@
 #define ERR_EXIT	2
 
 #define DOMAIN_SEPARATOR "zkcmp-domain-separator"
+#define CHALLENGE_SEPARATOR "zkcmp-challenge"
 #define DIGEST_LEN	32
 #define COMMIT_LEN	384
 #define PROOF_LEN	(COMMIT_LEN * 2)
 #define IO_BUF_LEN	16384
-#define PW_ITER		600000
+#define PBKDF2_ITER	600000
 #define PW_MAX		1024
 
 struct zkcmp {
 	const EVP_MD *h;
 	uint64_t window;
+	const char *context;
 	BIGNUM *p, *q, *g;
 	BN_CTX *ctx;
 };

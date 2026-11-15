@@ -1,6 +1,7 @@
 /*
  * Y = g^x mod p, x = H(secret) mod q
- * R = g^k mod p, c = H(Y || R [|| window]) mod q, s = k + c*x mod q
+ * R = g^k mod p, c = H(sep || Y || R || window || len(ctx) || ctx) mod q,
+ * s = k + c*x mod q
  * verify: g^s == R * Y^c mod p
  */
 #include <string.h>
@@ -30,15 +31,20 @@ challenge(const struct zkcmp *z, const unsigned char y[COMMIT_LEN],
 {
 	EVP_MD_CTX *h = EVP_MD_CTX_new();
 	uint64_t be = htobe64(z->window);
+	size_t clen = z->context ? strlen(z->context) : 0;
+	uint64_t cl = htobe64(clen);
 	unsigned char md[EVP_MAX_MD_SIZE];
 	unsigned int len = 0;
 	int ok = h != NULL &&
 	    EVP_DigestInit_ex(h, z->h, NULL) == 1 &&
+	    EVP_DigestUpdate(h, CHALLENGE_SEPARATOR,
+	    sizeof(CHALLENGE_SEPARATOR)) == 1 &&
 	    EVP_DigestUpdate(h, y, COMMIT_LEN) == 1 &&
-	    EVP_DigestUpdate(h, r, COMMIT_LEN) == 1;
+	    EVP_DigestUpdate(h, r, COMMIT_LEN) == 1 &&
+	    EVP_DigestUpdate(h, &be, sizeof(be)) == 1 &&
+	    EVP_DigestUpdate(h, &cl, sizeof(cl)) == 1 &&
+	    (clen == 0 || EVP_DigestUpdate(h, z->context, clen) == 1);
 
-	if (ok && z->window != 0)
-		ok = EVP_DigestUpdate(h, &be, sizeof(be)) == 1;
 	ok = ok && EVP_DigestFinal_ex(h, md, &len) == 1 &&
 	    len == DIGEST_LEN && BN_bin2bn(md, DIGEST_LEN, c) != NULL &&
 	    BN_mod(c, c, z->q, z->ctx) == 1;

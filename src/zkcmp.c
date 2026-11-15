@@ -20,11 +20,11 @@ _Noreturn static void
 usage(void)
 {
 	fprintf(stderr, "usage: zkcmp -c [-h hash] [-s salt] file commit\n"
-		"       zkcmp -p [-h hash] [-s salt] [-t seconds] file proof\n"
+		"       zkcmp -p [-h hash] [-s salt] [-t seconds] [-x context] file proof\n"
 		"       zkcmp -C [-h hash] [-s salt] commit\n"
-		"       zkcmp -P [-h hash] [-s salt] [-t seconds] proof\n"
+		"       zkcmp -P [-h hash] [-s salt] [-t seconds] [-x context] proof\n"
 		"       zkcmp -g salt\n"
-		"       zkcmp [-q] [-h hash] [-t seconds] commit proof\n");
+		"       zkcmp [-q] [-h hash] [-t seconds] [-x context] commit proof\n");
 	exit(ERR_EXIT);
 }
 
@@ -110,7 +110,7 @@ derive(const struct zkcmp *z, const char *s, const char *path, int confirm,
 	    "hashing");
 	EVP_MD_CTX_free(h);
 	guard(PKCS5_PBKDF2_HMAC((const char *)pre, sizeof(pre), salt,
-	    s ? sizeof(salt) : 0, PW_ITER, EVP_sha512(), DIGEST_LEN, digest),
+	    s ? sizeof(salt) : 0, PBKDF2_ITER, EVP_sha512(), DIGEST_LEN, digest),
 	    "key derivation");
 	explicit_bzero(pre, sizeof(pre));
 }
@@ -200,7 +200,7 @@ main(int argc, char **argv)
 	if (pledge("stdio rpath wpath cpath tty", NULL) == -1)
 		err(ERR_EXIT, "pledge");
 #endif
-	while ((ch = getopt(argc, argv, "gcpCPh:s:t:q")) != -1) {
+	while ((ch = getopt(argc, argv, "gcpCPh:s:t:qx:")) != -1) {
 		switch (ch) {
 		case 'c':
 		case 'p':
@@ -231,6 +231,11 @@ main(int argc, char **argv)
 			if (errno || *p)
 				usage();
 			break;
+		case 'x':
+			if (z.context)
+				usage();
+			z.context = optarg;
+			break;
 		case 'q':
 			q = 1;
 			break;
@@ -244,11 +249,11 @@ main(int argc, char **argv)
 	case 1:
 		switch (cmd) {
 		case 'g':
-			if (!t)
+			if (!t && !z.context)
 				return gen_salt(argv[0]);
 			break;
 		case 'C':
-			if (!t)
+			if (!t && !z.context)
 				return gen_statement(&z, cmd, s, t, NULL, argv[0]);
 			break;
 		case 'P':
@@ -258,7 +263,7 @@ main(int argc, char **argv)
 	case 2:
 		switch (cmd) {
 		case 'c':
-			if (!t)
+			if (!t && !z.context)
 				return gen_statement(&z, cmd, s, t, argv[0], argv[1]);
 			break;
 		case 'p':
@@ -266,6 +271,7 @@ main(int argc, char **argv)
 		case 0:
 			return verify_proof(&z, q, t, argv[0], argv[1]);
 		}
+		break;
 	}
 	usage();
 }
