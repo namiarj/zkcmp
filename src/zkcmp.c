@@ -249,7 +249,7 @@ main(int argc, char **argv)
 	case 1:
 		switch (cmd) {
 		case 'g':
-			if (!t && !z.context)
+			if (!s && !t && !z.context)
 				return gen_salt(argv[0]);
 			break;
 		case 'C':
@@ -269,7 +269,8 @@ main(int argc, char **argv)
 		case 'p':
 			return gen_statement(&z, cmd, s, t, argv[0], argv[1]);
 		case 0:
-			return verify_proof(&z, q, t, argv[0], argv[1]);
+			if (!s)
+				return verify_proof(&z, q, t, argv[0], argv[1]);
 		}
 		break;
 	}
