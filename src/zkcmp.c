@@ -192,7 +192,7 @@ main(int argc, char **argv)
 {
 	struct zkcmp z = { 0 };
 	const char *s = NULL;
-	char *p;
+	char *ptr;
 	uint64_t t = 0;
 	int ch, cmd = 0, q = 0;
 
@@ -231,8 +231,8 @@ main(int argc, char **argv)
 		case 't':
 			if (t)
 				usage();
-			t = strtoull(optarg, &p, 10);
-			if (errno || *p)
+			t = strtoull(optarg, &ptr, 10);
+			if (errno || *ptr)
 				usage();
 			break;
 		case 'x':
