@@ -190,7 +190,7 @@ gen_salt(const char *o)
 int
 main(int argc, char **argv)
 {
-	struct zkcmp z = { .h = EVP_sha256() };
+	struct zkcmp z = { 0 };
 	const char *s = NULL;
 	char *p;
 	uint64_t t = 0;
@@ -212,11 +212,15 @@ main(int argc, char **argv)
 			cmd = ch;
 			break;
 		case 'h':
+			if (z.h)
+				usage();
 			if (!strcmp(optarg, "sha512-256"))
 				z.h = EVP_sha512_256();
 			else if (!strcmp(optarg, "sha3-256"))
 				z.h = EVP_sha3_256();
-			else if (strcmp(optarg, "sha256"))
+			else if (!strcmp(optarg, "sha256"))
+				z.h = EVP_sha256();
+			else
 				usage();
 			break;
 		case 's':
@@ -243,6 +247,8 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
+	if (!z.h)
+		z.h = EVP_sha256();
 	argc -= optind;
 	argv += optind;
 	switch (argc) {
