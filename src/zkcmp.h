@@ -28,7 +28,7 @@
 struct zkcmp {
 	const EVP_MD *h;
 	uint64_t window;
-	const char *context;
+	const char *x;
 	BIGNUM *p, *q, *g;
 	BN_CTX *ctx;
 };

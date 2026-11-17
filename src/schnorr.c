@@ -31,7 +31,7 @@ challenge(const struct zkcmp *z, const unsigned char y[COMMIT_LEN],
 {
 	EVP_MD_CTX *h = EVP_MD_CTX_new();
 	uint64_t be = htobe64(z->window);
-	size_t clen = z->context ? strlen(z->context) : 0;
+	size_t clen = z->x ? strlen(z->x) : 0;
 	uint64_t cl = htobe64(clen);
 	unsigned char md[EVP_MAX_MD_SIZE];
 	unsigned int len = 0;
@@ -43,7 +43,7 @@ challenge(const struct zkcmp *z, const unsigned char y[COMMIT_LEN],
 	    EVP_DigestUpdate(h, r, COMMIT_LEN) == 1 &&
 	    EVP_DigestUpdate(h, &be, sizeof(be)) == 1 &&
 	    EVP_DigestUpdate(h, &cl, sizeof(cl)) == 1 &&
-	    (clen == 0 || EVP_DigestUpdate(h, z->context, clen) == 1);
+	    (clen == 0 || EVP_DigestUpdate(h, z->x, clen) == 1);
 
 	ok = ok && EVP_DigestFinal_ex(h, md, &len) == 1 &&
 	    len == DIGEST_LEN && BN_bin2bn(md, DIGEST_LEN, c) != NULL &&

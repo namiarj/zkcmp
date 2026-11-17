@@ -236,9 +236,9 @@ main(int argc, char **argv)
 				usage();
 			break;
 		case 'x':
-			if (z.context)
+			if (z.x)
 				usage();
-			z.context = optarg;
+			z.x = optarg;
 			break;
 		case 'q':
 			q = 1;
@@ -255,11 +255,11 @@ main(int argc, char **argv)
 	case 1:
 		switch (cmd) {
 		case 'g':
-			if (!s && !t && !z.context)
+			if (!s && !t && !z.x)
 				return gen_salt(argv[0]);
 			break;
 		case 'C':
-			if (!t && !z.context)
+			if (!t && !z.x)
 				return gen_statement(&z, cmd, s, t, NULL, argv[0]);
 			break;
 		case 'P':
@@ -269,7 +269,7 @@ main(int argc, char **argv)
 	case 2:
 		switch (cmd) {
 		case 'c':
-			if (!t && !z.context)
+			if (!t && !z.x)
 				return gen_statement(&z, cmd, s, t, argv[0], argv[1]);
 			break;
 		case 'p':
