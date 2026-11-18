@@ -8,6 +8,16 @@
 
 #include "zkcmp.h"
 
+static int
+nonzero_rand(BIGNUM *k, const BIGNUM *q)
+{
+	do
+		if (BN_priv_rand_range(k, q) != 1)
+			return 0;
+	while (BN_is_zero(k));
+	return 1;
+}
+
 int
 commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
     unsigned char commitment[COMMIT_LEN])
@@ -16,6 +26,8 @@ commit(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
 	BIGNUM *y = BN_new();
 	int status = -1;
 
+	if (x)
+		BN_set_flags(x, BN_FLG_CONSTTIME);
 	if (x && y && BN_mod(x, x, z->q, z->ctx) == 1 &&
 	    BN_mod_exp(y, z->g, x, z->p, z->ctx) == 1 &&
 	    BN_bn2binpad(y, commitment, COMMIT_LEN) == COMMIT_LEN)
@@ -64,9 +76,13 @@ prove(struct zkcmp *z, const unsigned char digest[DIGEST_LEN],
 	unsigned char rb[COMMIT_LEN];
 	int status = -1;
 
+	if (x)
+		BN_set_flags(x, BN_FLG_CONSTTIME);
+	if (k)
+		BN_set_flags(k, BN_FLG_CONSTTIME);
 	if (x && k && r && c &&
 	    BN_mod(x, x, z->q, z->ctx) == 1 &&
-	    BN_rand_range(k, z->q) == 1 &&
+	    nonzero_rand(k, z->q) == 1 &&
 	    BN_mod_exp(r, z->g, k, z->p, z->ctx) == 1 &&
 	    BN_bn2binpad(r, rb, COMMIT_LEN) == COMMIT_LEN &&
 	    challenge(z, commitment, rb, c) == 0 &&
@@ -100,6 +116,7 @@ verify(struct zkcmp *z, const unsigned char commitment[COMMIT_LEN],
 	    !BN_is_zero(r) && BN_cmp(r, z->p) < 0 &&
 	    BN_cmp(s, z->q) < 0 &&
 	    BN_mod_exp(c, y, z->q, z->p, z->ctx) == 1 && BN_is_one(c) &&
+	    BN_mod_exp(lhs, r, z->q, z->p, z->ctx) == 1 && BN_is_one(lhs) &&
 	    challenge(z, commitment, proof, c) == 0 &&
 	    BN_mod_exp(lhs, z->g, s, z->p, z->ctx) == 1 &&
 	    BN_mod_exp(rhs, y, c, z->p, z->ctx) == 1 &&
