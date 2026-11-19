@@ -14,7 +14,7 @@ The file (or password) is hashed, then stretched with PBKDF2-HMAC-SHA512. The re
 
 A proof is a non-interactive Schnorr proof of knowledge of `x` (Fiat-Shamir). It is fresh on every run, and the verifier learns only whether it is valid.
 
-Commitments are deterministic. Anyone who can guess the secret can recompute the commitment and check the guess, so use a salt (`-s`) for any low-entropy secret.
+Commitments are deterministic. Anyone who can guess the secret can recompute the commitment and check the guess, so use a salt (`-s`) for low-entropy secrets.
 
 ## Usage
 
